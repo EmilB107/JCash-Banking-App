@@ -1,0 +1,43 @@
+# JCash Banking App
+
+JCash is a full-stack **simulated wallet** project for learning and demonstrating frontend development, backend design, database modeling, authentication, transaction integrity, concurrency control, and automated testing. It is not a real banking or payment service and must not be used to store real financial information or move real money.
+
+## Technology
+- **Frontend:** Angular 22.2.x, TypeScript 6.0.x, Angular Router, HttpClient, Reactive Forms
+- **Backend:** Java 21, Spring Boot 4.1.2, Spring Web MVC, Bean Validation (Spring Security is planned but not yet declared in the supplied `pom.xml`)
+- **Database:** PostgreSQL 16, Spring Data JPA/Hibernate, Flyway; JDBC where appropriate
+- **Build and version control:** Maven Wrapper, npm 11.19.1, Git, GitHub
+- **API and testing:** REST, Postman, Swagger UI/OpenAPI, JUnit 5, Mockito, Spring Boot Test
+
+## Intended capabilities
+- Registration/login and access restricted to each user's own account
+- Wallet balances, transfers, and transaction history
+- Atomic transfers with concurrency protection and idempotency
+- Auditable double-entry ledger and database integrity constraints
+- Automated tests and a publicly accessible portfolio demo
+
+These are project goals, not a claim that every feature is already implemented.
+
+## Repository layout
+```text
+JCash-Banking-App/
+├── scripts/       # Linux, macOS, and Windows development launchers
+├── backend/       # Java and Spring Boot application
+├── frontend/      # Angular application
+└── docs/          # Setup and technical documentation
+```
+
+## Documentation
+- [Development environment overview](docs/dev-env.md)
+- [Frontend setup](docs/frontend-setup.md)
+- [Backend setup](docs/backend-setup.md)
+- [Database setup](docs/database-setup.md)
+- [Architecture](docs/architecture.md)
+- [Database design](docs/database-design.md)
+- [Security](docs/security.md)
+- [Testing](docs/testing.md)
+- [Deployment](docs/deployment.md)
+- [Development roadmap](docs/dev-roadmap.md)
+
+## Local development
+Set up PostgreSQL first, configure the backend's `DB_PASSWORD`, start Spring Boot, then start Angular. See the guides above for component-specific instructions. Commands and endpoints should be checked against the actual files in the repository as implementation evolves.

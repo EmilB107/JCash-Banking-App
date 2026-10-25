@@ -1,0 +1,2 @@
+-- Initial schema migration.
+-- Application tables will be added in subsequent migrations.
