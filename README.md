@@ -1,4 +1,4 @@
-# JCash Banking App
+# JCash Banking
 
 JCash is a full-stack **simulated wallet** project for learning and demonstrating frontend development, backend design, database modeling, authentication, transaction integrity, concurrency control, and automated testing. It is not a real banking or payment service and must not be used to store real financial information or move real money.
 

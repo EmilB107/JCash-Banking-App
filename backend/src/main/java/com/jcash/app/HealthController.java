@@ -1,5 +1,4 @@
-
-package com.jcash.backend;
+package com.jcash.app;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,7 +12,7 @@ public class HealthController {
     public Map<String, String> health() {
         return Map.of(
             "status", "UP",
-            "application", "JCash Banking App"
+            "application", "JCash Banking"
         );
     }
 }

@@ -18,9 +18,9 @@ export DB_PASSWORD
 ```
 The password is hidden while typing. Repeat in each new terminal session. Never commit passwords or other secrets.
 
-Your current `application.properties` uses `spring.application.name=backend`. That value is valid; it names the Spring application for configuration/logging purposes and does not affect the database connection. For consistency with the project naming, you may change it to `jcash_banking`. The remaining settings you shared match this example:
+The `spring.application.name` property identifies the Spring application for configuration and logging; it does not affect the database connection. The project uses `jcash-banking` as its application identifier. The remaining settings match this example:
 ```properties
-spring.application.name=backend
+spring.application.name=jcash-banking
 spring.datasource.url=jdbc:postgresql://localhost:5432/jcash_banking_db
 spring.datasource.username=jcash_banking_user
 spring.datasource.password=${DB_PASSWORD}

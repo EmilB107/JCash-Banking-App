@@ -1,4 +1,4 @@
-package com.jcash.backend;
+package com.jcash.app;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
