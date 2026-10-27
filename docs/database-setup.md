@@ -2,7 +2,7 @@
 
 JCash uses PostgreSQL 16 locally and plans to use Supabase-hosted PostgreSQL for deployment. The local database is named `jcash_banking_db`; the application role is `jcash_banking_user`.
 
-## Verify PostgreSQL
+## Start and verify PostgreSQL
 ```bash
 psql --version
 pg_lsclusters
@@ -17,6 +17,20 @@ Use `pg_lsclusters` to check that the relevant cluster is `online`. To stop Post
 ```bash
 sudo systemctl stop postgresql
 ```
+
+## Optional convenience script
+The repository includes optional convenience scripts. From the repository root, use the platform-specific script:
+```bash
+# Linux
+./scripts/linux/start-db.sh
+
+# macOS
+./scripts/macos/start-db.sh
+
+# Windows PowerShell
+.\scripts\windows\start-db.ps1
+```
+The script checks that PostgreSQL is installed and ready on `localhost:5432`. It does not create, reset, or delete databases. On Windows, service names depend on the PostgreSQL installer; the script starts a discoverable `postgresql*` service when possible. On macOS, it only checks readiness because PostgreSQL may have been installed by Homebrew, Postgres.app, or another distribution.
 
 ## Create database and application role
 Open the PostgreSQL shell as the administrative account:

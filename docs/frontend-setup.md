@@ -21,10 +21,24 @@ npm ci
 Keep `package-lock.json` committed alongside `package.json`. Use `npm install` when intentionally changing dependencies or updating the lockfile.
 
 ## Run Angular
-The supplied `package.json` defines `"start": "ng serve"`, so run:
+From `frontend/`, the standard npm command is:
 ```bash
 npm start
 ```
+
+## Optional convenience script
+The repository includes optional convenience scripts. From the repository root, use the platform-specific script:
+```bash
+# Linux
+./scripts/linux/start-frontend.sh
+
+# macOS
+./scripts/macos/start-frontend.sh
+
+# Windows PowerShell
+.\scripts\windows\start-frontend.ps1
+```
+The script checks that the locked frontend dependencies are installed, then runs the existing `npm start` script (`ng serve`). It does not require the backend to be running.
 Other declared scripts are `npm run build`, `npm run watch`, and `npm test`. The test script runs `ng test`; verify the generated Angular test configuration before relying on it.
 The development server commonly uses `http://localhost:4200`. Use the address printed by the CLI if it selects another port. Stop it with `Ctrl+C`.
 

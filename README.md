@@ -40,4 +40,8 @@ JCash-Banking-App/
 - [Development roadmap](docs/dev-roadmap.md)
 
 ## Local development
-Set up PostgreSQL first, configure the backend's `DB_PASSWORD`, start Spring Boot, then start Angular. See the guides above for component-specific instructions. Commands and endpoints should be checked against the actual files in the repository as implementation evolves.
+Set up PostgreSQL first, copy `.env.example` to `.env`, and set the local PostgreSQL password in `DB_PASSWORD`. On Linux Mint, the complete stack can then be started with:
+```bash
+./scripts/linux/start-all.sh
+```
+The launcher starts only the PostgreSQL service and application processes it owns; it does not create, reset, or delete database data. Individual component commands and Windows/macOS instructions are in [Development environment overview](docs/dev-env.md).
