@@ -3,8 +3,9 @@
 Security is a core requirement even though JCash simulates money.
 
 ## Authentication and authorization
-- Hash passwords with a well-supported algorithm such as BCrypt or Argon2; never store plaintext passwords.
-- Use Spring Security to protect endpoints.
+- Hash passwords with a well-supported algorithm such as BCrypt or Argon2; never store plaintext passwords. JCash currently uses BCrypt through Spring Security's `PasswordEncoder`.
+- Use Spring Security to protect endpoints. JCash currently uses server-side HTTP sessions, CSRF protection, and a database-backed `UserDetailsService`.
+- Keep registration, login, and CSRF-token retrieval public; require authentication for protected endpoints and invalidate the session on logout.
 - Check ownership on every account, transfer, and transaction-history request; a user must not access another user's records by changing an identifier.
 - Choose session-based authentication or JWT deliberately based on the application's needs. JWT is not mandatory.
 - Role-based access control is optional unless an administrator role is introduced.

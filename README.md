@@ -4,7 +4,7 @@ JCash is a full-stack **simulated wallet** project for learning and demonstratin
 
 ## Technology
 - **Frontend:** Angular 22.2.x, TypeScript 6.0.x, Angular Router, HttpClient, Reactive Forms
-- **Backend:** Java 21, Spring Boot 4.1.2, Spring Web MVC, Bean Validation (Spring Security is planned but not yet declared in the supplied `pom.xml`)
+- **Backend:** Java 21, Spring Boot 4.1.2, Spring Web MVC, Spring Data JPA, Bean Validation, Spring Security with server-side sessions and CSRF protection
 - **Database:** PostgreSQL 16, Spring Data JPA/Hibernate, Flyway; JDBC where appropriate
 - **Build and version control:** Maven Wrapper, npm 11.19.1, Git, GitHub
 - **API and testing:** REST, Postman, Swagger UI/OpenAPI, JUnit 5, Mockito, Spring Boot Test
@@ -16,7 +16,9 @@ JCash is a full-stack **simulated wallet** project for learning and demonstratin
 - Auditable double-entry ledger and database integrity constraints
 - Automated tests and a publicly accessible portfolio demo
 
-These are project goals, not a claim that every feature is already implemented.
+These are project goals; the current implementation includes user registration,
+password hashing, session-based login/logout, CSRF protection, and automatic
+creation of a PHP account with a zero balance.
 
 ## Repository layout
 ```text

@@ -1,6 +1,6 @@
 # Backend Setup
 
-The supplied `backend/pom.xml` configures **Java 21** and **Spring Boot 4.1.2**. Its declared dependencies include Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, and the PostgreSQL driver. The POM you provided does **not** currently declare Spring Security, so authentication/authorization dependencies still need to be added when implementing that part of the project. DTOs and the layered modular-monolith design are architectural choices, not automatically provided by these dependencies.
+The supplied `backend/pom.xml` configures **Java 21** and **Spring Boot 4.1.2**. Its declared dependencies include Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, Spring Security, and the PostgreSQL driver. The backend currently provides database-backed registration, BCrypt password hashing, server-side sessions, CSRF protection, login/logout, and a protected current-user endpoint. DTOs and the layered modular-monolith design are architectural choices, not automatically provided by these dependencies.
 
 ## Prerequisites
 From the repository root:
@@ -58,7 +58,19 @@ The script loads the root `.env`, validates `DB_PASSWORD` without printing it, a
 
 ## Dependencies and scripts currently declared
 
-The provided POM includes Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, and the PostgreSQL JDBC driver. It also includes test-scoped starters for JPA, Flyway, validation, and Web MVC. It does not currently include `spring-boot-starter-security`, so don't describe Spring Security as installed until you add the dependency. The supplied POM uses Spring Boot 4.1.2 and Java 21; keep this guide aligned if you intentionally change either version.
+The provided POM includes Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, Spring Security, and the PostgreSQL JDBC driver. It also includes test-scoped starters for JPA, Flyway, validation, and Web MVC. The supplied POM uses Spring Boot 4.1.2 and Java 21; keep this guide aligned if you intentionally change either version.
+
+## Authentication endpoints
+
+The current authentication flow uses server-side HTTP sessions:
+
+1. `GET /api/auth/csrf` to receive the CSRF token and `XSRF-TOKEN` cookie.
+2. `POST /api/users` to register a user and automatically create a PHP account with a zero balance.
+3. `POST /api/auth/login` to authenticate and establish the session.
+4. `GET /api/users/me` to retrieve the authenticated user's email.
+5. `POST /api/auth/logout` to invalidate the session.
+
+State-changing requests must include the CSRF token in the `X-XSRF-TOKEN` header. The `JSESSIONID` cookie identifies the server-side session and should remain inaccessible to client-side JavaScript.
 
 ## Configuration principles
 - Use environment variables for secrets and deployment-specific configuration.
