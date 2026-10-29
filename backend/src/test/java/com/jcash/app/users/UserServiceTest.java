@@ -2,6 +2,7 @@ package com.jcash.app.users;
 
 import com.jcash.app.accounts.Account;
 import com.jcash.app.accounts.AccountRepository;
+import com.jcash.app.users.exception.UserAlreadyExistsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,18 +1,25 @@
 package com.jcash.app.transfers;
 
 import com.jcash.app.accounts.Account;
-import com.jcash.app.accounts.AccountNotFoundException;
 import com.jcash.app.accounts.AccountRepository;
+import com.jcash.app.accounts.exception.AccountNotFoundException;
 import com.jcash.app.transactions.TransactionDirection;
 import com.jcash.app.transactions.TransactionEntry;
 import com.jcash.app.transactions.TransactionEntryRepository;
 import com.jcash.app.transactions.TransactionType;
 import com.jcash.app.transfers.dto.TransferRequest;
 import com.jcash.app.transfers.dto.TransferResponse;
+import com.jcash.app.transfers.exception.IdempotencyKeyConflictException;
+import com.jcash.app.transfers.exception.IdempotencyKeyInProgressException;
+import com.jcash.app.transfers.exception.InsufficientFundsException;
+import com.jcash.app.transfers.exception.InvalidIdempotencyKeyException;
+import com.jcash.app.transfers.exception.InvalidTransferAmountException;
+import com.jcash.app.transfers.exception.RecipientNotFoundException;
+import com.jcash.app.transfers.exception.SelfTransferNotAllowedException;
 import com.jcash.app.users.EmailNormalizer;
 import com.jcash.app.users.User;
-import com.jcash.app.users.UserNotFoundException;
 import com.jcash.app.users.UserRepository;
+import com.jcash.app.users.exception.UserNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -1,4 +1,4 @@
-package com.jcash.app.accounts;
+package com.jcash.app.accounts.exception;
 
 import java.util.UUID;
 

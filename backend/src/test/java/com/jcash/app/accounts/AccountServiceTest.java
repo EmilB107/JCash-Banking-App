@@ -1,11 +1,14 @@
 package com.jcash.app.accounts;
 
+import com.jcash.app.accounts.exception.AccountNotFoundException;
+import com.jcash.app.accounts.exception.InvalidCashInAmountException;
 import com.jcash.app.transactions.TransactionDirection;
 import com.jcash.app.transactions.TransactionEntry;
 import com.jcash.app.transactions.TransactionEntryRepository;
 import com.jcash.app.transactions.TransactionType;
 import com.jcash.app.users.User;
 import com.jcash.app.users.UserRepository;
+import com.jcash.app.users.exception.UserNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -151,7 +154,7 @@ class AccountServiceTest {
         assertThatThrownBy(() ->
                 accountService.findAuthenticatedUserAccount("missing@example.com")
         )
-                .isInstanceOf(com.jcash.app.users.UserNotFoundException.class)
+                .isInstanceOf(UserNotFoundException.class)
                 .hasMessageContaining("missing@example.com");
     }
 }

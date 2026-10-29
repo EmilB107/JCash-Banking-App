@@ -2,6 +2,7 @@ package com.jcash.app.users;
 
 import com.jcash.app.accounts.Account;
 import com.jcash.app.accounts.AccountRepository;
+import com.jcash.app.users.exception.UserAlreadyExistsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

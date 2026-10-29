@@ -1,4 +1,4 @@
-package com.jcash.app.users;
+package com.jcash.app.users.exception;
 
 public class UserNotFoundException extends RuntimeException {
 

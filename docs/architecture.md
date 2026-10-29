@@ -29,9 +29,9 @@ requirements without forcing all unrelated classes into broad top-level packages
 
 | Assessment requirement | Project implementation |
 |---|---|
-| `model` package | Domain and JPA model classes in the relevant feature package, such as `users/User`, `accounts/Account`, and `transactions/Transaction` |
+| `model` package | Domain and JPA model classes in the relevant feature package, such as `users/User`, `accounts/Account`, and `transactions/TransactionEntry` |
 | `service` package | Business services in the relevant feature package, such as authentication, cash-in, transfer, and transaction-history services |
-| `util` package | Shared validation, exception, security, formatting, and other cross-cutting helpers in `common/` or a focused utility package when needed |
+| `util` package | Shared validation, exception handling, security, formatting, and other cross-cutting helpers in `common/` or a focused utility package when needed. Feature-specific exceptions live in each feature's `exception/` subpackage (for example `transfers/exception/`), alongside its `dto/` subpackage |
 | Main application class | `com.jcash.app.BackendApplication` |
 | User model | User identity, mobile number, name, credential hash, account relationship, and transaction ownership |
 | Transaction model | Transaction type, exact monetary amount (`BigDecimal`), details, timestamp, and related account or transfer |

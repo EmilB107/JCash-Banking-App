@@ -2,8 +2,8 @@ package com.jcash.app.transactions;
 
 import com.jcash.app.transactions.dto.TransactionEntryResponse;
 import com.jcash.app.users.User;
-import com.jcash.app.users.UserNotFoundException;
 import com.jcash.app.users.UserRepository;
+import com.jcash.app.users.exception.UserNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

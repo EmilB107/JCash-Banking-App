@@ -4,6 +4,7 @@ import com.jcash.app.accounts.Account;
 import com.jcash.app.transactions.dto.TransactionEntryResponse;
 import com.jcash.app.users.User;
 import com.jcash.app.users.UserRepository;
+import com.jcash.app.users.exception.UserNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -103,7 +104,7 @@ class TransactionHistoryServiceTest {
                         "missing@example.com"
                 )
         )
-                .isInstanceOf(com.jcash.app.users.UserNotFoundException.class)
+                .isInstanceOf(UserNotFoundException.class)
                 .hasMessageContaining("missing@example.com");
     }
 }

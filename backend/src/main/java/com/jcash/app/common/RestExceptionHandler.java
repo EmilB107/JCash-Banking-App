@@ -1,16 +1,16 @@
 package com.jcash.app.common;
 
-import com.jcash.app.accounts.AccountNotFoundException;
-import com.jcash.app.accounts.InvalidCashInAmountException;
-import com.jcash.app.transfers.IdempotencyKeyConflictException;
-import com.jcash.app.transfers.IdempotencyKeyInProgressException;
-import com.jcash.app.transfers.InsufficientFundsException;
-import com.jcash.app.transfers.InvalidIdempotencyKeyException;
-import com.jcash.app.transfers.InvalidTransferAmountException;
-import com.jcash.app.transfers.RecipientNotFoundException;
-import com.jcash.app.transfers.SelfTransferNotAllowedException;
-import com.jcash.app.users.UserAlreadyExistsException;
-import com.jcash.app.users.UserNotFoundException;
+import com.jcash.app.accounts.exception.AccountNotFoundException;
+import com.jcash.app.accounts.exception.InvalidCashInAmountException;
+import com.jcash.app.transfers.exception.IdempotencyKeyConflictException;
+import com.jcash.app.transfers.exception.IdempotencyKeyInProgressException;
+import com.jcash.app.transfers.exception.InsufficientFundsException;
+import com.jcash.app.transfers.exception.InvalidIdempotencyKeyException;
+import com.jcash.app.transfers.exception.InvalidTransferAmountException;
+import com.jcash.app.transfers.exception.RecipientNotFoundException;
+import com.jcash.app.transfers.exception.SelfTransferNotAllowedException;
+import com.jcash.app.users.exception.UserAlreadyExistsException;
+import com.jcash.app.users.exception.UserNotFoundException;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.PessimisticLockException;
 import org.springframework.dao.PessimisticLockingFailureException;

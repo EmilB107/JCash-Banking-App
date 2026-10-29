@@ -1,4 +1,4 @@
-package com.jcash.app.accounts;
+package com.jcash.app.accounts.exception;
 
 public class InvalidCashInAmountException extends RuntimeException {
 
