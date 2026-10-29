@@ -7,7 +7,8 @@ The backend uses **Java 21** and **Spring Boot 4.1.2** with Spring Data JPA, Fly
 - CSRF protection
 - authenticated current-user access
 - authenticated account retrieval
-- validated demo cash-in
+- validated demo cash-in with an atomic account update and transaction entry
+- authenticated current-user transaction history
 - PHP account creation with a zero balance
 
 ## Prerequisites
@@ -31,13 +32,14 @@ The `spring.application.name` property identifies the Spring application for con
 spring.application.name=jcash-banking
 spring.datasource.url=jdbc:postgresql://localhost:5432/jcash_banking_db
 spring.datasource.username=jcash_banking_user
-spring.datasource.password=${DB_PASSWORD}
+spring.datasource.******
 spring.datasource.driver-class-name=org.postgresql.Driver
 spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.open-in-view=false
 spring.flyway.enabled=true
 ```
-This example reflects the `application.properties` content you supplied. The POM declares Flyway and PostgreSQL support, but it does not confirm that migration files already exist. `ddl-auto=validate` checks that the schema matches the entities; it does not create or update tables. Flyway migrations belong in `backend/src/main/resources/db/migration/`.
+
+This example reflects the `application.properties` content you supplied. The POM declares Flyway and PostgreSQL support, and migration files are stored in `backend/src/main/resources/db/migration/`. Flyway applies the transaction-entry schema migration before Hibernate validates the entity mappings. `ddl-auto=validate` checks that the schema matches the entities; it does not create or update tables.
 
 ## Start the backend
 From the repository root, the standard Maven Wrapper command is:
@@ -77,15 +79,15 @@ The current authentication flow uses server-side HTTP sessions:
 3. `POST /api/auth/login` to authenticate and establish the session.
 4. `GET /api/users/me` to retrieve the authenticated user's email.
 5. `GET /api/accounts/me` to retrieve the authenticated user's PHP account summary.
-6. `POST /api/accounts/me/cash-in` to increase that account balance with a positive `BigDecimal` amount.
-7. `POST /api/auth/logout` to invalidate the session.
+6. `POST /api/accounts/me/cash-in` to increase that account balance with a positive `BigDecimal` amount and record a CREDIT/CASH_IN transaction entry in the same transaction.
+7. `GET /api/transactions/me` to retrieve the authenticated user's transaction history as DTOs, ordered newest first.
+8. `POST /api/auth/logout` to invalidate the session.
 
 State-changing requests must include the CSRF token in the `X-XSRF-TOKEN` header. The `JSESSIONID` cookie identifies the server-side session and should remain inaccessible to client-side JavaScript.
 
-Account endpoints do not accept a user ID from the client. The server derives
-ownership from the authenticated session identity. Account responses expose only
-the account ID, currency, balance, creation timestamp, and update timestamp;
-password hashes and JPA entity relationships are not returned.
+Account and transaction endpoints do not accept a user ID from the client. The server derives ownership from the authenticated session identity. Account responses expose only the account ID, currency, balance, creation timestamp, and update timestamp. Transaction-history responses expose only the transaction ID, account ID, transaction type, direction, amount, currency, balance after the transaction, and creation timestamp; password hashes, JPA entities, and user relationships are not returned.
+
+The transaction-entry model supports both CREDIT and DEBIT directions and is reusable for later transaction types. Transfers are not implemented yet.
 
 ## Configuration principles
 - Use environment variables for secrets and deployment-specific configuration.

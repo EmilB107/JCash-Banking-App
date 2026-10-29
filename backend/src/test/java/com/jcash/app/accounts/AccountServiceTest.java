@@ -1,10 +1,15 @@
 package com.jcash.app.accounts;
 
+import com.jcash.app.transactions.TransactionDirection;
+import com.jcash.app.transactions.TransactionEntry;
+import com.jcash.app.transactions.TransactionEntryRepository;
+import com.jcash.app.transactions.TransactionType;
 import com.jcash.app.users.User;
 import com.jcash.app.users.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -25,6 +30,9 @@ class AccountServiceTest {
     private AccountRepository accountRepository;
 
     @Mock
+    private TransactionEntryRepository transactionEntryRepository;
+
+    @Mock
     private UserRepository userRepository;
 
     @Mock
@@ -34,7 +42,11 @@ class AccountServiceTest {
 
     @BeforeEach
     void setUp() {
-        accountService = new AccountService(accountRepository, userRepository);
+        accountService = new AccountService(
+                accountRepository,
+                transactionEntryRepository,
+                userRepository
+        );
     }
 
     @Test
@@ -65,7 +77,7 @@ class AccountServiceTest {
     }
 
     @Test
-    void cashInIncreasesTheAuthenticatedUsersBalance() {
+    void cashInIncreasesTheAuthenticatedUsersBalanceAndRecordsEntry() {
         UUID userId = UUID.randomUUID();
         Account account = new Account(user);
         when(userRepository.findByEmail("demo@example.com"))
@@ -80,6 +92,16 @@ class AccountServiceTest {
         );
 
         assertThat(result.getBalance()).isEqualByComparingTo("125.50");
+        ArgumentCaptor<TransactionEntry> entryCaptor =
+                ArgumentCaptor.forClass(TransactionEntry.class);
+        verify(transactionEntryRepository).save(entryCaptor.capture());
+        TransactionEntry entry = entryCaptor.getValue();
+        assertThat(entry.getAccount()).isSameAs(account);
+        assertThat(entry.getTransactionType()).isEqualTo(TransactionType.CASH_IN);
+        assertThat(entry.getDirection()).isEqualTo(TransactionDirection.CREDIT);
+        assertThat(entry.getAmount()).isEqualByComparingTo("125.50");
+        assertThat(entry.getCurrency()).isEqualTo("PHP");
+        assertThat(entry.getBalanceAfter()).isEqualByComparingTo("125.50");
     }
 
     @Test
@@ -96,7 +118,11 @@ class AccountServiceTest {
                     .hasMessage("Cash-in amount must be greater than zero");
         }
 
-        verifyNoInteractions(userRepository, accountRepository);
+        verifyNoInteractions(
+                userRepository,
+                accountRepository,
+                transactionEntryRepository
+        );
     }
 
     @Test

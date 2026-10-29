@@ -1,5 +1,9 @@
 package com.jcash.app.accounts;
 
+import com.jcash.app.transactions.TransactionDirection;
+import com.jcash.app.transactions.TransactionEntry;
+import com.jcash.app.transactions.TransactionEntryRepository;
+import com.jcash.app.transactions.TransactionType;
 import com.jcash.app.users.User;
 import com.jcash.app.users.UserNotFoundException;
 import com.jcash.app.users.UserRepository;
@@ -12,12 +16,15 @@ import java.math.BigDecimal;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final TransactionEntryRepository transactionEntryRepository;
     private final UserRepository userRepository;
 
     public AccountService(
             AccountRepository accountRepository,
+            TransactionEntryRepository transactionEntryRepository,
             UserRepository userRepository) {
         this.accountRepository = accountRepository;
+        this.transactionEntryRepository = transactionEntryRepository;
         this.userRepository = userRepository;
     }
 
@@ -37,6 +44,14 @@ public class AccountService {
 
         Account account = findAuthenticatedUserAccount(email);
         account.credit(amount);
+        transactionEntryRepository.save(new TransactionEntry(
+                account,
+                TransactionType.CASH_IN,
+                TransactionDirection.CREDIT,
+                amount,
+                account.getCurrency(),
+                account.getBalance()
+        ));
         return account;
     }
 
