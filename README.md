@@ -18,7 +18,9 @@ JCash is a full-stack **simulated wallet** project for learning and demonstratin
 
 These are project goals; the current implementation includes user registration,
 password hashing, session-based login/logout, CSRF protection, and automatic
-creation of a PHP account with a zero balance.
+creation of a PHP account with a zero balance. Authenticated users can retrieve
+their own account through `GET /api/accounts/me` and perform a validated demo
+cash-in through `POST /api/accounts/me/cash-in`.
 
 ## Repository layout
 ```text

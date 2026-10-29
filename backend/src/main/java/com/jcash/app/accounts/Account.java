@@ -21,7 +21,6 @@ import java.util.UUID;
 public class Account {
 
     public static final String DEFAULT_CURRENCY = "PHP";
-    private static final BigDecimal INITIAL_BALANCE = BigDecimal.ZERO;
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -35,7 +34,7 @@ public class Account {
     private String currency;
 
     @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal balance;
+    private BigDecimal balance = BigDecimal.ZERO;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -49,7 +48,6 @@ public class Account {
     public Account(User user) {
         this.user = user;
         this.currency = DEFAULT_CURRENCY;
-        this.balance = INITIAL_BALANCE;
     }
 
     @PrePersist

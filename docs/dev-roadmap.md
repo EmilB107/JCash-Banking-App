@@ -4,10 +4,10 @@ This is a suggested implementation order, not a status report. Adjust it as depe
 
 1. **Foundation:** confirm Angular, Spring Boot, Maven Wrapper, PostgreSQL, JPA, and Flyway run locally.
 2. **Data model:** design and migrate user/account tables and the ledger-related schema.
-3. **Core API:** implement account retrieval and transaction history, then transfer business rules.
+3. **Core API:** account retrieval and validated demo cash-in are implemented; next add transaction history, then transfer business rules.
 4. **Financial integrity:** use `BigDecimal`, transaction boundaries, concurrency protection, balanced ledger entries, and idempotency.
 5. **Automated tests:** cover successful and failed transfers, insufficient funds, duplicate retries, concurrency, and authorization.
-6. **Security:** complete password hashing, session-based login/logout, CSRF protection, endpoint protection, validation, and account ownership checks before exposing protected features. Registration, login, logout, and the protected current-user endpoint are implemented; account ownership checks remain for account and transaction APIs.
+6. **Security:** complete password hashing, session-based login/logout, CSRF protection, endpoint protection, validation, and account ownership checks before exposing protected features. Registration, login, logout, the protected current-user endpoint, authenticated account access, and account ownership checks for account APIs are implemented; transaction and transfer authorization remain.
 7. **API tooling:** document endpoints with OpenAPI/Swagger UI and test them with Postman.
 8. **Frontend integration:** build login, dashboard, transfer, and history views and connect them to the API.
 9. **End-to-end verification:** test transfers between separate users and verify database/ledger consistency.

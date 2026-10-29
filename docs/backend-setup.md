@@ -1,6 +1,14 @@
 # Backend Setup
 
-The supplied `backend/pom.xml` configures **Java 21** and **Spring Boot 4.1.2**. Its declared dependencies include Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, Spring Security, and the PostgreSQL driver. The backend currently provides database-backed registration, BCrypt password hashing, server-side sessions, CSRF protection, login/logout, and a protected current-user endpoint. DTOs and the layered modular-monolith design are architectural choices, not automatically provided by these dependencies.
+The backend uses **Java 21** and **Spring Boot 4.1.2** with Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, Spring Security, and PostgreSQL. It currently supports:
+
+- user registration with BCrypt password hashing
+- session-based login and logout
+- CSRF protection
+- authenticated current-user access
+- authenticated account retrieval
+- validated demo cash-in
+- PHP account creation with a zero balance
 
 ## Prerequisites
 From the repository root:
@@ -68,9 +76,16 @@ The current authentication flow uses server-side HTTP sessions:
 2. `POST /api/users` to register a user and automatically create a PHP account with a zero balance.
 3. `POST /api/auth/login` to authenticate and establish the session.
 4. `GET /api/users/me` to retrieve the authenticated user's email.
-5. `POST /api/auth/logout` to invalidate the session.
+5. `GET /api/accounts/me` to retrieve the authenticated user's PHP account summary.
+6. `POST /api/accounts/me/cash-in` to increase that account balance with a positive `BigDecimal` amount.
+7. `POST /api/auth/logout` to invalidate the session.
 
 State-changing requests must include the CSRF token in the `X-XSRF-TOKEN` header. The `JSESSIONID` cookie identifies the server-side session and should remain inaccessible to client-side JavaScript.
+
+Account endpoints do not accept a user ID from the client. The server derives
+ownership from the authenticated session identity. Account responses expose only
+the account ID, currency, balance, creation timestamp, and update timestamp;
+password hashes and JPA entity relationships are not returned.
 
 ## Configuration principles
 - Use environment variables for secrets and deployment-specific configuration.
