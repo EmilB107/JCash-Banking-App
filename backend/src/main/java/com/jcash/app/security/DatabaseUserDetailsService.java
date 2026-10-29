@@ -1,5 +1,6 @@
 package com.jcash.app.security;
 
+import com.jcash.app.users.EmailNormalizer;
 import com.jcash.app.users.User;
 import com.jcash.app.users.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,9 +21,10 @@ public class DatabaseUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email)
             throws UsernameNotFoundException {
 
-        User user = userRepository.findByEmail(email)
+        String normalizedEmail = EmailNormalizer.normalize(email);
+        User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found with email: " + email));
+                        new UsernameNotFoundException("User not found with email: " + normalizedEmail));
 
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getEmail())

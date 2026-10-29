@@ -16,11 +16,13 @@ JCash is a full-stack **simulated wallet** project for learning and demonstratin
 - Auditable double-entry ledger and database integrity constraints
 - Automated tests and a publicly accessible portfolio demo
 
-These are project goals; the current implementation includes user registration,
-password hashing, session-based login/logout, CSRF protection, and automatic
-creation of a PHP account with a zero balance. Authenticated users can retrieve
-their own account through `GET /api/accounts/me` and perform a validated demo
-cash-in through `POST /api/accounts/me/cash-in`.
+The current backend includes user registration, password hashing, session-based
+login/logout, CSRF protection, automatic creation of a PHP account with a zero
+balance, authenticated account retrieval, validated demo cash-in, authenticated
+transaction history, and authenticated transfers through `POST /api/transfers`.
+Transfers derive the sender from the session, require an `Idempotency-Key`
+header, write balanced debit/credit entries atomically, and return the original
+result for a completed duplicate request.
 
 ## Repository layout
 ```text

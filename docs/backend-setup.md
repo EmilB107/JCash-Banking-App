@@ -9,6 +9,8 @@ The backend uses **Java 21** and **Spring Boot 4.1.2** with Spring Data JPA, Fly
 - authenticated account retrieval
 - validated demo cash-in with an atomic account update and transaction entry
 - authenticated current-user transaction history
+- authenticated transfers between separate PHP accounts
+- transfer idempotency, ordered pessimistic locking of sender and recipient accounts, optimistic version checks, and atomic ledger persistence
 - PHP account creation with a zero balance
 
 ## Prerequisites
@@ -68,9 +70,9 @@ The script loads the root `.env`, validates `DB_PASSWORD` without printing it, a
 
 ## Dependencies and scripts currently declared
 
-The provided POM includes Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, Spring Security, and the PostgreSQL JDBC driver. It also includes test-scoped starters for JPA, Flyway, validation, and Web MVC. The supplied POM uses Spring Boot 4.1.2 and Java 21; keep this guide aligned if you intentionally change either version.
+The provided POM includes Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, Spring Security, and the PostgreSQL JDBC driver. It also includes test-scoped starters for JPA, Flyway, validation, Web MVC, and Spring Security (`spring-boot-starter-security-test`, which provides `spring-security-test` and the security integration for `@WebMvcTest`). The supplied POM uses Spring Boot 4.1.2 and Java 21; keep this guide aligned if you intentionally change either version.
 
-## Authentication endpoints
+## Authentication and money movement endpoints
 
 The current authentication flow uses server-side HTTP sessions:
 
@@ -81,16 +83,26 @@ The current authentication flow uses server-side HTTP sessions:
 5. `GET /api/accounts/me` to retrieve the authenticated user's PHP account summary.
 6. `POST /api/accounts/me/cash-in` to increase that account balance with a positive `BigDecimal` amount and record a CREDIT/CASH_IN transaction entry in the same transaction.
 7. `GET /api/transactions/me` to retrieve the authenticated user's transaction history as DTOs, ordered newest first.
-8. `POST /api/auth/logout` to invalidate the session.
+8. `POST /api/transfers` to transfer a positive amount to another user's account.
+9. `POST /api/auth/logout` to invalidate the session.
 
 State-changing requests must include the CSRF token in the `X-XSRF-TOKEN` header. The `JSESSIONID` cookie identifies the server-side session and should remain inaccessible to client-side JavaScript.
 
-Account and transaction endpoints do not accept a user ID from the client. The server derives ownership from the authenticated session identity. Account responses expose only the account ID, currency, balance, creation timestamp, and update timestamp. Transaction-history responses expose only the transaction ID, account ID, transaction type, direction, amount, currency, balance after the transaction, and creation timestamp; password hashes, JPA entities, and user relationships are not returned.
+Emails are case-insensitive. Registration, login, and transfer recipients are trimmed and lowercased before use, so `Bob@Example.com` and `bob@example.com` are the same account.
 
-The transaction-entry model supports both CREDIT and DEBIT directions and is reusable for later transaction types. Transfers are not implemented yet.
+`POST /api/transfers` requires the `Idempotency-Key` header. The key must be nonblank and no longer than 255 characters. The JSON body contains only `recipientEmail` and `amount`; the sender is always derived from the authenticated session identity. The recipient must exist, must have an account, and must not be the sender. A successful response contains sender/recipient account IDs, recipient email, amount, currency, and both resulting balances.
+
+Transfers debit the sender with `Account.debit`, credit the recipient with `Account.credit`, and write one TRANSFER/DEBIT and one TRANSFER/CREDIT entry. Account updates, both entries, and the idempotency record commit in one transaction. A repeated key with the same recipient and amount returns the original completed response; reuse with different request data or while the original request is in progress returns HTTP 409. Invalid input returns HTTP 400, an unknown recipient returns HTTP 404, insufficient funds or self-transfer returns HTTP 400, an optimistic-lock conflict returns HTTP 409 `OPTIMISTIC_LOCK_CONFLICT`, and a lock-acquisition failure such as a lock timeout returns HTTP 409 `LOCK_CONFLICT`. Both 409 lock responses are safe to retry with the same `Idempotency-Key`. Requests without a session return HTTP 401, and state-changing requests without a CSRF token return HTTP 403.
+
+The sender and recipient account rows are locked in a consistent order (ascending user ID), so simultaneous opposite-direction transfers wait instead of deadlocking.
+
+Account and transaction endpoints do not accept a user ID from the client. The server derives ownership from the authenticated session identity. Account responses expose only the account ID, currency, balance, creation timestamp, and update timestamp. Transaction-history responses expose only the transaction ID, account ID, transaction type, direction, amount, currency, balance after the transaction, and creation timestamp; password hashes, JPA entities, and user relationships are not returned.
 
 ## Configuration principles
 - Use environment variables for secrets and deployment-specific configuration.
 - Keep database schema changes in versioned Flyway migrations.
 - Once a migration has been applied, create a new migration for later changes instead of editing the applied file.
 - See [database setup](database-setup.md) for PostgreSQL service and role commands.
+
+## Running tests
+The full suite needs PostgreSQL running, `DB_PASSWORD` exported, and a separate `jcash_banking_test_db` database for the transfer integration test, whose schema is wiped on every run. See [testing](testing.md#test-database) for the one-time setup command and the non-database fallback.

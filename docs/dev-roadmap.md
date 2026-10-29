@@ -1,13 +1,13 @@
 # Development Roadmap
 
-This is a suggested implementation order, not a status report. Adjust it as dependencies and learning needs become clear.
+This is a suggested implementation order and status summary. Adjust it as dependencies and learning needs become clear.
 
-1. **Foundation:** confirm Angular, Spring Boot, Maven Wrapper, PostgreSQL, JPA, and Flyway run locally.
-2. **Data model:** design and migrate user/account tables and the ledger-related schema.
-3. **Core API:** account retrieval and validated demo cash-in are implemented; next add transaction history, then transfer business rules.
-4. **Financial integrity:** use `BigDecimal`, transaction boundaries, concurrency protection, balanced ledger entries, and idempotency.
-5. **Automated tests:** cover successful and failed transfers, insufficient funds, duplicate retries, concurrency, and authorization.
-6. **Security:** complete password hashing, session-based login/logout, CSRF protection, endpoint protection, validation, and account ownership checks before exposing protected features. Registration, login, logout, the protected current-user endpoint, authenticated account access, and account ownership checks for account APIs are implemented; transaction and transfer authorization remain.
+1. **Foundation:** confirm Angular, Spring Boot, Maven Wrapper, PostgreSQL, JPA, and Flyway run locally. **Complete.**
+2. **Data model:** design and migrate user/account tables and the ledger-related schema. **Complete through transfer support:** V1-V6 migrations define users, accounts, transaction entries, account versions, transfer idempotency records, and normalized (case-insensitive) user emails.
+3. **Core API:** account retrieval, validated demo cash-in, transaction history, and authenticated transfer business rules. **Complete for the current backend milestone.**
+4. **Financial integrity:** use `BigDecimal`, transaction boundaries, concurrency protection, balanced ledger entries, optimistic locking, and idempotency. **Implemented and verified for transfers against PostgreSQL**, including rollback, concurrent duplicates, concurrent overspending, and deadlock-free opposite-direction transfers.
+5. **Automated tests:** cover successful and failed transfers, insufficient funds, duplicate retries, concurrency, and authorization. **Implemented:** unit, MockMvc (authentication, CSRF, validation, and HTTP error mapping), and PostgreSQL-backed migration, rollback, and concurrency tests.
+6. **Security:** complete password hashing, session-based login/logout, CSRF protection, endpoint protection, validation, and account ownership checks before exposing protected features. Registration, login, logout, the protected current-user endpoint, authenticated account access, transaction history, and transfer sender/recipient ownership checks are implemented.
 7. **API tooling:** document endpoints with OpenAPI/Swagger UI and test them with Postman.
 8. **Frontend integration:** build login, dashboard, transfer, and history views and connect them to the API.
 9. **End-to-end verification:** test transfers between separate users and verify database/ledger consistency.
@@ -16,9 +16,10 @@ This is a suggested implementation order, not a status report. Adjust it as depe
 
 ## Completion criteria
 - Users can register/log in and access only their own accounts.
-- Users can view balances and transaction history and transfer simulated money.
-- Invalid transfers and insufficient balances are rejected.
-- Transfers are atomic and protected against concurrent overspending and duplicate retries.
+- Users can view balances and transaction history and transfer simulated money through the backend API.
+- Invalid transfers, self-transfers, unknown recipients, and insufficient balances are rejected.
+- Transfers are atomic and protected against concurrent duplicate processing, concurrent overspending, deadlocks between opposite-direction transfers, and optimistic-lock conflicts.
+- Repeated completed requests return the original result without duplicate ledger entries.
 - Financial records are auditable and internally consistent.
-- Automated tests cover important success and failure paths.
+- Automated unit, HTTP, and PostgreSQL-backed integration tests cover important success and failure paths, including migration, rollback, and concurrency.
 - Public deployment is usable as a portfolio demo and clearly disclaims real-money use.

@@ -29,13 +29,15 @@ public class UserService {
             String displayName,
             String rawPassword) {
 
-        if (userRepository.existsByEmail(email)) {
-                throw new UserAlreadyExistsException(email);
+        String normalizedEmail = EmailNormalizer.normalize(email);
+
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new UserAlreadyExistsException(normalizedEmail);
         }
 
         String passwordHash = passwordEncoder.encode(rawPassword);
 
-        User user = new User(email, displayName, passwordHash);
+        User user = new User(normalizedEmail, displayName, passwordHash);
         user = userRepository.save(user);
 
         Account account = new Account(user);
