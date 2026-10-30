@@ -2,6 +2,7 @@ package com.jcash.app.transfers;
 
 import com.jcash.app.accounts.Account;
 import com.jcash.app.accounts.AccountRepository;
+import com.jcash.app.common.FreshTestDatabaseConfiguration;
 import com.jcash.app.security.DatabaseUserDetailsService;
 import com.jcash.app.transfers.dto.TransferRequest;
 import com.jcash.app.transfers.dto.TransferResponse;
@@ -10,20 +11,15 @@ import com.jcash.app.users.User;
 import com.jcash.app.users.UserRepository;
 import com.jcash.app.users.UserService;
 import com.jcash.app.users.exception.UserAlreadyExistsException;
-import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.flyway.autoconfigure.FlywayMigrationStrategy;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,12 +35,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(properties = {
-        "spring.datasource.url=jdbc:postgresql://localhost:5432/" + TransferIntegrationTest.TEST_DATABASE,
-        "spring.flyway.clean-disabled=false"
+        FreshTestDatabaseConfiguration.DATASOURCE_URL,
+        FreshTestDatabaseConfiguration.CLEAN_ENABLED
 })
+@Import(FreshTestDatabaseConfiguration.class)
 class TransferIntegrationTest {
-
-    static final String TEST_DATABASE = "jcash_banking_test_db";
 
     private static final String ALICE = "alice@example.com";
     private static final String BOB = "bob@example.com";
@@ -66,31 +61,6 @@ class TransferIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-
-    @TestConfiguration
-    static class FreshDatabaseConfiguration {
-
-        @Bean
-        FlywayMigrationStrategy cleanThenMigrate() {
-            return flyway -> {
-                requireTestDatabase(flyway);
-                flyway.clean();
-                flyway.migrate();
-            };
-        }
-
-        private static void requireTestDatabase(Flyway flyway) {
-            try (Connection connection =
-                         flyway.getConfiguration().getDataSource().getConnection()) {
-                if (!TEST_DATABASE.equals(connection.getCatalog())) {
-                    throw new IllegalStateException(
-                            "Refusing to clean non-test database " + connection.getCatalog());
-                }
-            } catch (SQLException exception) {
-                throw new IllegalStateException(exception);
-            }
-        }
-    }
 
     @BeforeEach
     void resetData() {
