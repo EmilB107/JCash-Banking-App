@@ -49,12 +49,14 @@ public class SecurityConfiguration {
                 .csrfTokenRepository(
                     CookieCsrfTokenRepository.withHttpOnlyFalse()
                 )
+                .csrfTokenRequestHandler(new LenientCsrfTokenRequestHandler())
             )
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/auth/csrf").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exceptions -> exceptions

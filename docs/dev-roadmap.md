@@ -8,7 +8,7 @@ This is a suggested implementation order and status summary. Adjust it as depend
 4. **Financial integrity:** use `BigDecimal`, transaction boundaries, concurrency protection, balanced ledger entries, optimistic locking, and idempotency. **Implemented and verified for transfers against PostgreSQL**, including rollback, concurrent duplicates, concurrent overspending, and deadlock-free opposite-direction transfers.
 5. **Automated tests:** cover successful and failed transfers, insufficient funds, duplicate retries, concurrency, and authorization. **Implemented:** unit, MockMvc (authentication, CSRF, validation, and HTTP error mapping), and PostgreSQL-backed migration, rollback, and concurrency tests.
 6. **Security:** complete credential (PIN) hashing, session-based login/logout, CSRF protection, endpoint protection, validation, and account ownership checks before exposing protected features. Registration, login by email or mobile number with PIN, the 3-attempt lockout, logout, the protected current-user endpoint, authenticated account access, transaction history, and transfer sender/recipient ownership checks are implemented.
-7. **API tooling:** document endpoints with OpenAPI/Swagger UI and test them with Postman.
+7. **API tooling:** document endpoints with OpenAPI/Swagger UI and test them with Postman. **Swagger UI implemented** (springdoc, `/swagger-ui/index.html`); the Postman run is pending.
 8. **Frontend integration:** build login, dashboard, transfer, and history views and connect them to the API.
 9. **End-to-end verification:** test transfers between separate users and verify database/ledger consistency.
 10. **Portfolio deployment:** deploy Angular, Spring Boot, and PostgreSQL using the selected hosting providers.

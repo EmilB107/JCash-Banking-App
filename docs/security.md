@@ -6,7 +6,8 @@ Security is a core requirement even though JCash simulates money.
 - Hash credentials with a well-supported algorithm such as BCrypt or Argon2; never store plaintext credentials. JCash uses a 6-digit PIN hashed with BCrypt through Spring Security's `PasswordEncoder`.
 - Limit guessing: after 3 consecutive wrong PINs the account is locked for 5 minutes (HTTP 423 `ACCOUNT_LOCKED`), even for the correct PIN, and unlocks automatically. A successful login resets the count. Login attempts lock the user row (`SELECT ... FOR UPDATE`), so concurrent guesses cannot exceed the limit. Unknown identifiers return the same HTTP 401 as a wrong PIN and lock nothing; a locked response does reveal that the identifier exists.
 - Use Spring Security to protect endpoints. JCash currently uses server-side HTTP sessions, CSRF protection, and a database-backed `UserDetailsService`.
-- Keep registration, login, and CSRF-token retrieval public; require authentication for protected endpoints and invalidate the session on logout.
+- Keep registration, login, CSRF-token retrieval, and the API documentation (`/v3/api-docs`, Swagger UI) public; require authentication for protected endpoints and invalidate the session on logout.
+- CSRF tokens are stored in a JavaScript-readable `XSRF-TOKEN` cookie and must be sent back in the `X-XSRF-TOKEN` header. `LenientCsrfTokenRequestHandler` accepts the masked token from `GET /api/auth/csrf` or the raw cookie value; Spring's `spa()` handler was not used because it rejects the masked token in a header.
 - Check ownership on every account, transfer, and transaction-history request; a user must not access another user's records by changing an identifier.
 - Choose session-based authentication or JWT deliberately based on the application's needs. JWT is not mandatory.
 - Role-based access control is optional unless an administrator role is introduced.

@@ -6,6 +6,7 @@ The backend uses **Java 21** and **Spring Boot 4.1.2** with Spring Data JPA, Fly
 - session-based login by email or mobile number with PIN, and logout
 - account lockout for 5 minutes after 3 consecutive failed logins
 - CSRF protection
+- OpenAPI description and Swagger UI
 - authenticated current-user access
 - authenticated account retrieval
 - validated demo cash-in with an atomic account update and transaction entry
@@ -87,7 +88,7 @@ The current authentication flow uses server-side HTTP sessions:
 8. `POST /api/transfers` to transfer a positive amount to another user's account.
 9. `POST /api/auth/logout` to invalidate the session.
 
-State-changing requests must include the CSRF token in the `X-XSRF-TOKEN` header. The `JSESSIONID` cookie identifies the server-side session and should remain inaccessible to client-side JavaScript.
+State-changing requests must include the CSRF token in the `X-XSRF-TOKEN` header. Either form is accepted: the masked `token` returned by `GET /api/auth/csrf`, or the raw `XSRF-TOKEN` cookie value (what Swagger UI and Angular send). The `JSESSIONID` cookie identifies the server-side session and should remain inaccessible to client-side JavaScript.
 
 Emails are case-insensitive. Registration, login, and transfer recipients are trimmed and lowercased before use, so `Bob@Example.com` and `bob@example.com` are the same account.
 
@@ -102,6 +103,9 @@ Transfers debit the sender with `Account.debit`, credit the recipient with `Acco
 The sender and recipient account rows are locked in a consistent order (ascending user ID), so simultaneous opposite-direction transfers wait instead of deadlocking.
 
 Account and transaction endpoints do not accept a user ID from the client. The server derives ownership from the authenticated session identity. Account responses expose only the account ID, currency, balance, creation timestamp, and update timestamp. Transaction-history responses expose only the transaction ID, account ID, transaction type, direction, amount, currency, balance after the transaction, details, transfer reference (null for cash-in), and creation timestamp; PIN hashes, JPA entities, and user relationships are not returned.
+
+## API documentation
+With the backend running, Swagger UI is at `http://localhost:8080/swagger-ui/index.html` and the OpenAPI description at `/v3/api-docs`. Both are public; every other endpoint keeps its normal protection. To use **Try it out** on protected endpoints, call `GET /api/auth/csrf` and then `POST /api/auth/login` from the page; the browser then sends the session and CSRF cookies, and `springdoc.swagger-ui.csrf.enabled=true` makes Swagger UI copy the `XSRF-TOKEN` cookie into the `X-XSRF-TOKEN` header.
 
 ## Configuration principles
 - Use environment variables for secrets and deployment-specific configuration.
