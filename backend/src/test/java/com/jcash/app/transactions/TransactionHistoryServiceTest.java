@@ -58,7 +58,8 @@ class TransactionHistoryServiceTest {
                 TransactionDirection.CREDIT,
                 new BigDecimal("125.50"),
                 "PHP",
-                new BigDecimal("125.50")
+                new BigDecimal("125.50"),
+                "Cash in"
         );
         ReflectionTestUtils.setField(entry, "id", entryId);
         ReflectionTestUtils.setField(
@@ -89,6 +90,8 @@ class TransactionHistoryServiceTest {
             assertThat(response.currency()).isEqualTo("PHP");
             assertThat(response.balanceAfter())
                     .isEqualByComparingTo("125.50");
+            assertThat(response.details()).isEqualTo("Cash in");
+            assertThat(response.transferReference()).isNull();
         });
         verify(transactionEntryRepository)
                 .findByAccountUserIdOrderByCreatedAtDesc(userId);

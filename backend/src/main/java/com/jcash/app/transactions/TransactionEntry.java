@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -46,6 +47,18 @@ public class TransactionEntry {
     @Column(name = "balance_after", nullable = false, precision = 19, scale = 2)
     private BigDecimal balanceAfter;
 
+    @Column(nullable = false, length = 255)
+    private String details;
+
+    // The other side of a transfer; null for cash-in.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "counterparty_account_id")
+    private Account counterpartyAccount;
+
+    // Shared by the DEBIT and CREDIT entries of one transfer; null for cash-in.
+    @Column(name = "transfer_reference")
+    private UUID transferReference;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -58,13 +71,31 @@ public class TransactionEntry {
             TransactionDirection direction,
             BigDecimal amount,
             String currency,
-            BigDecimal balanceAfter) {
+            BigDecimal balanceAfter,
+            String details) {
+        this(account, transactionType, direction, amount, currency, balanceAfter,
+                details, null, null);
+    }
+
+    public TransactionEntry(
+            Account account,
+            TransactionType transactionType,
+            TransactionDirection direction,
+            BigDecimal amount,
+            String currency,
+            BigDecimal balanceAfter,
+            String details,
+            Account counterpartyAccount,
+            UUID transferReference) {
         this.account = account;
         this.transactionType = transactionType;
         this.direction = direction;
         this.amount = amount;
         this.currency = currency;
         this.balanceAfter = balanceAfter;
+        this.details = details;
+        this.counterpartyAccount = counterpartyAccount;
+        this.transferReference = transferReference;
     }
 
     @PrePersist
@@ -98,6 +129,18 @@ public class TransactionEntry {
 
     public BigDecimal getBalanceAfter() {
         return balanceAfter;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public Account getCounterpartyAccount() {
+        return counterpartyAccount;
+    }
+
+    public UUID getTransferReference() {
+        return transferReference;
     }
 
     public Instant getCreatedAt() {

@@ -16,6 +16,8 @@ public record TransactionEntryResponse(
         BigDecimal amount,
         String currency,
         BigDecimal balanceAfter,
+        String details,
+        UUID transferReference,
         Instant createdAt) {
 
     public static TransactionEntryResponse from(TransactionEntry entry) {
@@ -27,6 +29,8 @@ public record TransactionEntryResponse(
                 entry.getAmount(),
                 entry.getCurrency(),
                 entry.getBalanceAfter(),
+                entry.getDetails(),
+                entry.getTransferReference(),
                 entry.getCreatedAt()
         );
     }

@@ -35,6 +35,8 @@ class TransactionHistoryControllerTest {
                 new BigDecimal("10.00"),
                 "PHP",
                 new BigDecimal("10.00"),
+                "Cash in",
+                null,
                 Instant.parse("2025-01-01T00:00:00Z")
         );
         when(authentication.getName()).thenReturn("demo@example.com");

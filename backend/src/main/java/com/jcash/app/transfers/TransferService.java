@@ -115,13 +115,17 @@ public class TransferService {
         }
         recipientAccount.credit(amount);
 
+        UUID transferReference = UUID.randomUUID();
         transactionEntryRepository.save(new TransactionEntry(
                 senderAccount,
                 TransactionType.TRANSFER,
                 TransactionDirection.DEBIT,
                 amount,
                 senderAccount.getCurrency(),
-                senderAccount.getBalance()
+                senderAccount.getBalance(),
+                transferDetails("Transfer to ", recipient),
+                recipientAccount,
+                transferReference
         ));
         transactionEntryRepository.save(new TransactionEntry(
                 recipientAccount,
@@ -129,7 +133,10 @@ public class TransferService {
                 TransactionDirection.CREDIT,
                 amount,
                 recipientAccount.getCurrency(),
-                recipientAccount.getBalance()
+                recipientAccount.getBalance(),
+                transferDetails("Transfer from ", sender),
+                senderAccount,
+                transferReference
         ));
 
         idempotencyReservation.markCompleted(
@@ -142,6 +149,12 @@ public class TransferService {
         accountRepository.flush();
 
         return idempotencyReservation.toResponse();
+    }
+
+    // Details are a snapshot: later name changes do not rewrite history.
+    private static String transferDetails(String prefix, User counterparty) {
+        return prefix + counterparty.getDisplayName()
+                + " (" + counterparty.getMobileNumber() + ")";
     }
 
     private Account lockSenderAccount(User sender) {

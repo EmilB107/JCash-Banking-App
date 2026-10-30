@@ -80,7 +80,7 @@ class TransferIntegrationTest {
 
         assertThat(history)
                 .extracting(row -> row.get("version"))
-                .containsExactly("1", "2", "3", "4", "5", "6", "7");
+                .containsExactly("1", "2", "3", "4", "5", "6", "7", "8");
         assertThat(history)
                 .extracting(row -> row.get("success"))
                 .containsOnly(true);

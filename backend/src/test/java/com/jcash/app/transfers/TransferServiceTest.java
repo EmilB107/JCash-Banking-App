@@ -29,6 +29,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -123,6 +124,42 @@ class TransferServiceTest {
                     assertThat(entry.getTransactionType()).isEqualTo(TransactionType.TRANSFER);
                     assertThat(entry.getAmount()).isEqualByComparingTo("25.00");
                 });
+    }
+
+    @Test
+    void transferEntriesShareReferenceAndDescribeEachCounterparty() {
+        transfer("key-1", "25.00");
+
+        ArgumentCaptor<TransactionEntry> entries =
+                ArgumentCaptor.forClass(TransactionEntry.class);
+        verify(transactionEntryRepository, org.mockito.Mockito.times(2)).save(entries.capture());
+        TransactionEntry debit = entries.getAllValues().get(0);
+        TransactionEntry credit = entries.getAllValues().get(1);
+
+        assertThat(debit.getDetails()).isEqualTo("Transfer to Recipient (09170000002)");
+        assertThat(debit.getCounterpartyAccount()).isSameAs(recipientAccount);
+        assertThat(credit.getDetails()).isEqualTo("Transfer from Sender (09170000001)");
+        assertThat(credit.getCounterpartyAccount()).isSameAs(senderAccount);
+        assertThat(debit.getTransferReference())
+                .isNotNull()
+                .isEqualTo(credit.getTransferReference());
+    }
+
+    @Test
+    void eachTransferGetsItsOwnReference() {
+        transfer("key-1", "10.00");
+        transfer("key-2", "10.00");
+
+        ArgumentCaptor<TransactionEntry> entries =
+                ArgumentCaptor.forClass(TransactionEntry.class);
+        verify(transactionEntryRepository, org.mockito.Mockito.times(4)).save(entries.capture());
+        List<UUID> references = entries.getAllValues().stream()
+                .map(TransactionEntry::getTransferReference)
+                .toList();
+        assertThat(references).doesNotContainNull();
+        assertThat(references.get(0)).isEqualTo(references.get(1));
+        assertThat(references.get(2)).isEqualTo(references.get(3));
+        assertThat(references.get(0)).isNotEqualTo(references.get(2));
     }
 
     @Test

@@ -105,6 +105,9 @@ class AccountServiceTest {
         assertThat(entry.getAmount()).isEqualByComparingTo("125.50");
         assertThat(entry.getCurrency()).isEqualTo("PHP");
         assertThat(entry.getBalanceAfter()).isEqualByComparingTo("125.50");
+        assertThat(entry.getDetails()).isEqualTo("Cash in");
+        assertThat(entry.getCounterpartyAccount()).isNull();
+        assertThat(entry.getTransferReference()).isNull();
     }
 
     @Test

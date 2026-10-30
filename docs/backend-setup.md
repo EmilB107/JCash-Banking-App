@@ -83,7 +83,7 @@ The current authentication flow uses server-side HTTP sessions:
 4. `GET /api/users/me` to retrieve the authenticated user's profile (`id`, `email`, `mobileNumber`, `displayName`, `createdAt`).
 5. `GET /api/accounts/me` to retrieve the authenticated user's PHP account summary.
 6. `POST /api/accounts/me/cash-in` to increase that account balance with a positive `BigDecimal` amount and record a CREDIT/CASH_IN transaction entry in the same transaction.
-7. `GET /api/transactions/me` to retrieve the authenticated user's transaction history as DTOs, ordered newest first.
+7. `GET /api/transactions/me` to retrieve the authenticated user's transaction history as DTOs, ordered newest first. Each entry has a server-generated `details` description (`Cash in`, `Transfer to <name> (<mobile>)`, or `Transfer from <name> (<mobile>)`) and, for transfers, a `transferReference` shared by the sender's DEBIT and the recipient's CREDIT entry.
 8. `POST /api/transfers` to transfer a positive amount to another user's account.
 9. `POST /api/auth/logout` to invalidate the session.
 
@@ -101,7 +101,7 @@ Transfers debit the sender with `Account.debit`, credit the recipient with `Acco
 
 The sender and recipient account rows are locked in a consistent order (ascending user ID), so simultaneous opposite-direction transfers wait instead of deadlocking.
 
-Account and transaction endpoints do not accept a user ID from the client. The server derives ownership from the authenticated session identity. Account responses expose only the account ID, currency, balance, creation timestamp, and update timestamp. Transaction-history responses expose only the transaction ID, account ID, transaction type, direction, amount, currency, balance after the transaction, and creation timestamp; PIN hashes, JPA entities, and user relationships are not returned.
+Account and transaction endpoints do not accept a user ID from the client. The server derives ownership from the authenticated session identity. Account responses expose only the account ID, currency, balance, creation timestamp, and update timestamp. Transaction-history responses expose only the transaction ID, account ID, transaction type, direction, amount, currency, balance after the transaction, details, transfer reference (null for cash-in), and creation timestamp; PIN hashes, JPA entities, and user relationships are not returned.
 
 ## Configuration principles
 - Use environment variables for secrets and deployment-specific configuration.

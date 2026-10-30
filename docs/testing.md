@@ -44,7 +44,7 @@ The transfer unit tests (`TransferServiceTest`, `TransferRequestValidationTest`,
 ## Database-backed transfer scenarios
 `TransferIntegrationTest` runs against a real PostgreSQL database and verifies:
 
-- V1-V7 Flyway migrations apply to a fresh database and Hibernate `ddl-auto=validate` succeeds.
+- V1-V8 Flyway migrations apply to a fresh database and Hibernate `ddl-auto=validate` succeeds.
 - Both account updates, both transaction entries, and the idempotency record roll back together when a database write fails (simulated with a temporary trigger).
 - A completed retry returns the original result and creates no second pair of ledger entries.
 - Concurrent requests with the same sender/key apply only one transfer.
@@ -55,6 +55,10 @@ The transfer unit tests (`TransferServiceTest`, `TransferRequestValidationTest`,
 - Transfers by mobile number reach the recipient in both `09...` and `+639...` formats, and a retry naming the recipient by mobile number after email returns the original result.
 
 The opposite-direction test is timing-dependent: it is strong evidence that lock ordering prevents deadlocks, not a formal proof.
+
+## Transaction history scenarios
+- `AccountServiceTest` and `TransferServiceTest`: cash-in entries have `Cash in` details and no transfer link; both entries of a transfer share one reference, name each other as counterparty, and carry `Transfer to ...` / `Transfer from ...` details; separate transfers get separate references.
+- `TransactionHistoryIntegrationTest` (PostgreSQL): both users' histories show the linked transfer with matching references and counterparties, an idempotent retry adds no entries or references, details survive a later name change, and the database rejects blank details, transfer entries without a counterparty or reference, cash-in entries with one, and a second DEBIT for the same reference.
 
 ## Registration and login scenarios
 - `MobileNumberNormalizerTest` and `CreateUserRequestValidationTest`: `+639...` normalization, mobile-number format, and exactly-six-digit PINs.
@@ -67,7 +71,7 @@ Against PostgreSQL:
 - `AuthIntegrationTest` covers HTTP login by email and both mobile formats with an email session principal, lockout and expiry (by moving `locked_until` into the past), reset on success, duplicate mobile numbers, and 10 concurrent wrong-PIN logins producing exactly 2 HTTP 401s, 8 locked responses, and a counter of 3.
 
 ### Test database
-The PostgreSQL integration tests (`TransferIntegrationTest`, `UserRegistrationIntegrationTest`, `AuthIntegrationTest`) share `FreshTestDatabaseConfiguration` and one cached Spring context. They use a dedicated `jcash_banking_test_db` database owned by `jcash_banking_user`. Create it once:
+The PostgreSQL integration tests (`TransferIntegrationTest`, `UserRegistrationIntegrationTest`, `AuthIntegrationTest`, `TransactionHistoryIntegrationTest`) share `FreshTestDatabaseConfiguration` and one cached Spring context. They use a dedicated `jcash_banking_test_db` database owned by `jcash_banking_user`. Create it once:
 ```bash
 sudo -u postgres psql -c "CREATE DATABASE jcash_banking_test_db OWNER jcash_banking_user;"
 ```

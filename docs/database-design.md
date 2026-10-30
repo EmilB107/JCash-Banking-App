@@ -6,7 +6,7 @@ This document records the implemented data model. Flyway migrations are the sour
 - **User:** email, mobile number, display name, PIN hash, and login-lockout state; emails are stored trimmed and lowercase, and V6 enforces this with a check constraint so uniqueness is case-insensitive; never store plaintext PINs.
 - **Account:** wallet owner, currency, current balance, and JPA optimistic-lock version.
 - **Transfer idempotency record:** sender-scoped request key, original request payload, completion state, recipient, and resulting balances.
-- **Ledger entry:** immutable debit/credit record linked to an account.
+- **Ledger entry:** immutable debit/credit record linked to an account, with a details description and, for transfers, the counterparty account and a reference shared by both sides.
 
 ## Implemented transfer schema
 `V5__add_transfer_support.sql` adds the following without modifying earlier migrations:
@@ -58,5 +58,15 @@ Recipient and sender account changes are made through `Account.debit` and `Accou
 
 These behaviours are verified against PostgreSQL by `TransferIntegrationTest`: concurrent same-key requests, concurrent overspending, interleaved opposite-direction transfers, and rollback after a database write failure.
 
+## Implemented transaction details schema
+`V8__add_transaction_details.sql` changes `transaction_entries`:
+
+- Refuses to run if TRANSFER entries already exist, because their counterparty cannot be reconstructed reliably.
+- Adds `details VARCHAR(255) NOT NULL` (existing cash-in rows are backfilled with `Cash in`) and rejects blank details.
+- Adds `counterparty_account_id`, a foreign key to `accounts`, and `transfer_reference UUID`. A check constraint requires both for TRANSFER entries and neither for other types.
+- Adds a unique constraint on `(transfer_reference, direction)`, so one transfer has exactly one DEBIT and one CREDIT entry; it also indexes lookups by reference.
+
+Details are written once, when the money moves, as a snapshot (`Transfer to Bob Santos (09170000002)`), so later name changes do not rewrite history. The counterparty account is stored but not yet returned by the API.
+
 ## Migration discipline
-The database starts with the existing V1-V4 schema migrations, then applies V5 for transfer support, V6 to enforce normalized user emails, and V7 for mobile-number and PIN login. Once a Flyway migration has been applied, do not edit it; create a new versioned migration for future changes. Hibernate runs with `ddl-auto=validate`, so fresh-database migration correctness and entity/schema alignment must be checked together. The PostgreSQL integration tests do this on every run by cleaning the dedicated test database and applying V1-V7 from scratch before the Spring context validates the entities.
+The database starts with the existing V1-V4 schema migrations, then applies V5 for transfer support, V6 to enforce normalized user emails, V7 for mobile-number and PIN login, and V8 for transaction details and transfer links. Once a Flyway migration has been applied, do not edit it; create a new versioned migration for future changes. Hibernate runs with `ddl-auto=validate`, so fresh-database migration correctness and entity/schema alignment must be checked together. The PostgreSQL integration tests do this on every run by cleaning the dedicated test database and applying V1-V8 from scratch before the Spring context validates the entities.

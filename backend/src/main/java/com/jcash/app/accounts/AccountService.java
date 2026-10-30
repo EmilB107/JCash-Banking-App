@@ -17,6 +17,8 @@ import java.math.BigDecimal;
 @Service
 public class AccountService {
 
+    static final String CASH_IN_DETAILS = "Cash in";
+
     private final AccountRepository accountRepository;
     private final TransactionEntryRepository transactionEntryRepository;
     private final UserRepository userRepository;
@@ -52,7 +54,8 @@ public class AccountService {
                 TransactionDirection.CREDIT,
                 amount,
                 account.getCurrency(),
-                account.getBalance()
+                account.getBalance(),
+                CASH_IN_DETAILS
         ));
         return account;
     }
