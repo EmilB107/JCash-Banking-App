@@ -80,7 +80,7 @@ The current authentication flow uses server-side HTTP sessions:
 1. `GET /api/auth/csrf` to receive the CSRF token and `XSRF-TOKEN` cookie.
 2. `POST /api/users` with `email`, `mobileNumber`, `displayName`, and `pin` to register a user and automatically create a PHP account with a zero balance.
 3. `POST /api/auth/login` with `identifier` (email or mobile number) and `pin` to authenticate and establish the session.
-4. `GET /api/users/me` to retrieve the authenticated user's email.
+4. `GET /api/users/me` to retrieve the authenticated user's profile (`id`, `email`, `mobileNumber`, `displayName`, `createdAt`).
 5. `GET /api/accounts/me` to retrieve the authenticated user's PHP account summary.
 6. `POST /api/accounts/me/cash-in` to increase that account balance with a positive `BigDecimal` amount and record a CREDIT/CASH_IN transaction entry in the same transaction.
 7. `GET /api/transactions/me` to retrieve the authenticated user's transaction history as DTOs, ordered newest first.

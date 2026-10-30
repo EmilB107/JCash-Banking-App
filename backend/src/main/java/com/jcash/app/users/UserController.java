@@ -12,8 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -36,21 +34,15 @@ public class UserController {
                 request.pin()
         );
 
-        return new UserResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getMobileNumber(),
-                user.getDisplayName(),
-                user.getCreatedAt()
-        );
+        return UserResponse.from(user);
     }
 
     @GetMapping("/me")
-    public Map<String, String> currentUser(
+    public UserResponse currentUser(
             Authentication authentication) {
 
-        return Map.of(
-                "email", authentication.getName()
+        return UserResponse.from(
+                userService.findAuthenticatedUser(authentication.getName())
         );
     }
 }

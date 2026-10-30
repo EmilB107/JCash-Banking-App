@@ -18,6 +18,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -70,6 +72,31 @@ class UserControllerMvcTest {
         mockMvc.perform(register(VALID_BODY))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("MOBILE_NUMBER_ALREADY_REGISTERED"));
+    }
+
+    @Test
+    void currentUserReturnsProfileWithoutCredentialFields() throws Exception {
+        when(userService.findAuthenticatedUser("demo@example.com"))
+                .thenReturn(new User("demo@example.com", "09171234567", "Demo User", "hash"));
+
+        mockMvc.perform(get("/api/users/me").with(user("demo@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.*", hasSize(5)))
+                .andExpect(jsonPath("$.email").value("demo@example.com"))
+                .andExpect(jsonPath("$.mobileNumber").value("09171234567"))
+                .andExpect(jsonPath("$.displayName").value("Demo User"))
+                .andExpect(jsonPath("$.pinHash").doesNotExist())
+                .andExpect(jsonPath("$.failedLoginAttempts").doesNotExist())
+                .andExpect(jsonPath("$.lockedUntil").doesNotExist());
+    }
+
+    @Test
+    void currentUserWithoutSessionReturns401() throws Exception {
+        mockMvc.perform(get("/api/users/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("UNAUTHENTICATED"));
+
+        verifyNoInteractions(userService);
     }
 
     @ParameterizedTest

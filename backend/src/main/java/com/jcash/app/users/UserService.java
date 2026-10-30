@@ -4,6 +4,7 @@ import com.jcash.app.accounts.Account;
 import com.jcash.app.accounts.AccountRepository;
 import com.jcash.app.users.exception.MobileNumberAlreadyRegisteredException;
 import com.jcash.app.users.exception.UserAlreadyExistsException;
+import com.jcash.app.users.exception.UserNotFoundException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -69,6 +70,12 @@ public class UserService {
         accountRepository.save(account);
 
         return user;
+    }
+
+    @Transactional(readOnly = true)
+    public User findAuthenticatedUser(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException(email));
     }
 
     private static String violatedConstraint(DataIntegrityViolationException exception) {

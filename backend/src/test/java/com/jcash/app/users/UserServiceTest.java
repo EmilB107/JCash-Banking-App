@@ -4,6 +4,7 @@ import com.jcash.app.accounts.Account;
 import com.jcash.app.accounts.AccountRepository;
 import com.jcash.app.users.exception.MobileNumberAlreadyRegisteredException;
 import com.jcash.app.users.exception.UserAlreadyExistsException;
+import com.jcash.app.users.exception.UserNotFoundException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.sql.SQLException;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -170,6 +172,23 @@ class UserServiceTest {
                 .isSameAs(unrelated);
 
         verify(accountRepository, never()).save(any(Account.class));
+    }
+
+    @Test
+    void findAuthenticatedUserReturnsStoredUser() {
+        User stored = new User(EMAIL, MOBILE, "Demo User", "bcrypt-hash");
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(stored));
+
+        assertThat(userService.findAuthenticatedUser(EMAIL)).isSameAs(stored);
+    }
+
+    @Test
+    void findAuthenticatedUserRejectsUnknownEmail() {
+        when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.findAuthenticatedUser("missing@example.com"))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessageContaining("missing@example.com");
     }
 
     private void stubSuccessfulSave() {

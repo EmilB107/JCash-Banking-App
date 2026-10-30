@@ -60,7 +60,7 @@ The opposite-direction test is timing-dependent: it is strong evidence that lock
 - `MobileNumberNormalizerTest` and `CreateUserRequestValidationTest`: `+639...` normalization, mobile-number format, and exactly-six-digit PINs.
 - `UserServiceTest`: PIN hashing, canonical mobile storage, duplicate email and mobile checks, and translation of concurrent unique-constraint violations.
 - `LoginServiceTest` uses Spring Security's real `DaoAuthenticationProvider` and BCrypt with a fixed `Clock`: email and mobile login, wrong PIN, locking on the third failure, rejection of the correct PIN while locked, automatic unlock after 5 minutes, a fresh count after expiry, reset on success, and unknown identifiers.
-- `AuthControllerMvcTest` and `UserControllerMvcTest`: session creation on login, HTTP 401 `INVALID_CREDENTIALS`, HTTP 423 `ACCOUNT_LOCKED`, HTTP 409 `EMAIL_ALREADY_REGISTERED` / `MOBILE_NUMBER_ALREADY_REGISTERED`, HTTP 400 validation, and HTTP 403 without CSRF.
+- `AuthControllerMvcTest` and `UserControllerMvcTest`: session creation on login, the `/api/users/me` profile without credential or lockout fields, HTTP 401 `INVALID_CREDENTIALS`, HTTP 423 `ACCOUNT_LOCKED`, HTTP 409 `EMAIL_ALREADY_REGISTERED` / `MOBILE_NUMBER_ALREADY_REGISTERED`, HTTP 400 validation, and HTTP 403 without CSRF.
 
 Against PostgreSQL:
 - `UserRegistrationIntegrationTest` forces registration races deterministically: the second insert is confirmed blocked on the unique index (via `pg_locks`) before the first commits, and must fail as a duplicate email or mobile number. It also checks that the database rejects non-canonical mobile numbers.

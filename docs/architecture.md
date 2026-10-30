@@ -38,6 +38,24 @@ requirements without forcing all unrelated classes into broad top-level packages
 | Login, balance, cash-in, transfer, and transaction logs | REST controllers delegating to validated services and repositories |
 | JDBC/database persistence | Spring Data JPA and Hibernate backed by JDBC, PostgreSQL, and versioned Flyway migrations |
 
+Where the assessment wording and common industry practice differ, the project
+leans towards industry practice and records the mapping here rather than
+restructuring:
+
+- **Packages:** feature packages (`users/`, `accounts/`, `transfers/`,
+  `transactions/`) instead of top-level `model/`, `service/`, and `util/`
+  folders, so each feature's model, service, DTOs, and exceptions stay together.
+- **Identifiers:** `UUID` primary keys instead of `long` user IDs, so IDs are
+  not guessable or sequential and can be generated without a database round trip.
+- **Model names:** the user's balance and transaction list live on `Account`
+  and its `TransactionEntry` ledger rows rather than directly on `User`, so a
+  balance always has an auditable ledger behind it.
+- **Login messages:** a wrong PIN and an unknown mobile number or email return
+  the same message ("Email/mobile number or PIN is incorrect"), so the login
+  endpoint cannot be used to discover which mobile numbers are registered. The
+  application still checks that the user exists before verifying the PIN, and
+  a locked account gets its own message.
+
 This mapping preserves the assessment’s required object-oriented design while
 using maintainable feature-based packages. The assessment’s “three login
 attempts” requirement is implemented as server-side failure tracking: the user

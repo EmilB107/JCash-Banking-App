@@ -78,7 +78,9 @@ class AuthIntegrationTest {
 
         mockMvc.perform(get("/api/users/me").session(session))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value(EMAIL));
+                .andExpect(jsonPath("$.email").value(EMAIL))
+                .andExpect(jsonPath("$.mobileNumber").value(MOBILE))
+                .andExpect(jsonPath("$.displayName").value("Demo User"));
     }
 
     @Test
