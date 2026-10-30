@@ -16,8 +16,8 @@ import com.jcash.app.transfers.exception.InvalidIdempotencyKeyException;
 import com.jcash.app.transfers.exception.InvalidTransferAmountException;
 import com.jcash.app.transfers.exception.RecipientNotFoundException;
 import com.jcash.app.transfers.exception.SelfTransferNotAllowedException;
-import com.jcash.app.users.EmailNormalizer;
 import com.jcash.app.users.User;
+import com.jcash.app.users.UserLookupService;
 import com.jcash.app.users.UserRepository;
 import com.jcash.app.users.exception.UserNotFoundException;
 import org.springframework.stereotype.Service;
@@ -36,16 +36,19 @@ public class TransferService {
     private final TransactionEntryRepository transactionEntryRepository;
     private final TransferIdempotencyKeyRepository transferIdempotencyKeyRepository;
     private final UserRepository userRepository;
+    private final UserLookupService userLookupService;
 
     public TransferService(
             AccountRepository accountRepository,
             TransactionEntryRepository transactionEntryRepository,
             TransferIdempotencyKeyRepository transferIdempotencyKeyRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            UserLookupService userLookupService) {
         this.accountRepository = accountRepository;
         this.transactionEntryRepository = transactionEntryRepository;
         this.transferIdempotencyKeyRepository = transferIdempotencyKeyRepository;
         this.userRepository = userRepository;
+        this.userLookupService = userLookupService;
     }
 
     @Transactional
@@ -55,8 +58,8 @@ public class TransferService {
             TransferRequest request) {
 
         String normalizedIdempotencyKey = normalizeIdempotencyKey(idempotencyKey);
-        String recipientEmail = normalizeRecipientEmail(
-                request == null ? null : request.recipientEmail()
+        String recipientIdentifier = requireRecipient(
+                request == null ? null : request.recipient()
         );
         BigDecimal amount = validateTransferAmount(
                 request == null ? null : request.amount()
@@ -64,8 +67,11 @@ public class TransferService {
 
         User sender = userRepository.findByEmail(senderEmail)
                 .orElseThrow(() -> new UserNotFoundException(senderEmail));
-        User recipient = userRepository.findByEmail(recipientEmail)
-                .orElseThrow(() -> new RecipientNotFoundException(recipientEmail));
+        User recipient = userLookupService.findByIdentifier(recipientIdentifier)
+                .orElseThrow(() -> new RecipientNotFoundException(recipientIdentifier));
+        // The idempotency record keys on the resolved email, so a retry that names the
+        // same recipient by mobile number instead of email is the same request.
+        String recipientEmail = recipient.getEmail();
         if (sender.getId().equals(recipient.getId())) {
             throw new SelfTransferNotAllowedException();
         }
@@ -190,17 +196,17 @@ public class TransferService {
         return normalized;
     }
 
-    private String normalizeRecipientEmail(String recipientEmail) {
-        if (recipientEmail == null) {
+    private String requireRecipient(String recipient) {
+        if (recipient == null) {
             throw new RecipientNotFoundException("null");
         }
 
-        String normalized = EmailNormalizer.normalize(recipientEmail);
-        if (normalized.isEmpty()) {
-            throw new RecipientNotFoundException(recipientEmail);
+        String trimmed = recipient.trim();
+        if (trimmed.isEmpty()) {
+            throw new RecipientNotFoundException(recipient);
         }
 
-        return normalized;
+        return trimmed;
     }
 
     private BigDecimal validateTransferAmount(BigDecimal amount) {

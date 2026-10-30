@@ -31,13 +31,15 @@ public class UserController {
 
         User user = userService.createUser(
                 request.email(),
+                request.mobileNumber(),
                 request.displayName(),
-                request.password()
+                request.pin()
         );
 
         return new UserResponse(
                 user.getId(),
                 user.getEmail(),
+                user.getMobileNumber(),
                 user.getDisplayName(),
                 user.getCreatedAt()
         );

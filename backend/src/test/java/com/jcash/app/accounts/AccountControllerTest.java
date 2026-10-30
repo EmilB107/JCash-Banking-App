@@ -28,7 +28,7 @@ class AccountControllerTest {
     void currentAccountReturnsOnlySafeAccountFields() {
         UUID accountId = UUID.randomUUID();
         Instant now = Instant.parse("2025-01-01T00:00:00Z");
-        User user = new User("demo@example.com", "Demo User", "hashed");
+        User user = new User("demo@example.com", "09171234567", "Demo User", "hashed");
         Account account = new Account(user);
         account.setUser(user);
 

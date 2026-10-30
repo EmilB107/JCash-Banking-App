@@ -14,11 +14,12 @@ Automated tests should be developed alongside features, not postponed until the 
 ## Transfer scenarios
 The transfer unit tests (`TransferServiceTest`, `TransferRequestValidationTest`, `TransferControllerTest`) cover:
 
-- valid request validation, including recipient email and NUMERIC(19,2) limits
+- valid request validation, including the recipient identifier and NUMERIC(19,2) limits
+- recipients resolved by email or by mobile number in either format, with the resolved email recorded for idempotency
 - authenticated sender lookup and rejection of client-supplied sender identity
 - successful sender debit and recipient credit
 - exactly one TRANSFER/DEBIT and one TRANSFER/CREDIT history entry
-- missing recipient account
+- missing recipient account (by email or mobile number)
 - self-transfer rejection before any account lock or write
 - account locks acquired in ascending user-ID order for both transfer directions
 - insufficient funds
@@ -43,7 +44,7 @@ The transfer unit tests (`TransferServiceTest`, `TransferRequestValidationTest`,
 ## Database-backed transfer scenarios
 `TransferIntegrationTest` runs against a real PostgreSQL database and verifies:
 
-- V1-V6 Flyway migrations apply to a fresh database and Hibernate `ddl-auto=validate` succeeds.
+- V1-V7 Flyway migrations apply to a fresh database and Hibernate `ddl-auto=validate` succeeds.
 - Both account updates, both transaction entries, and the idempotency record roll back together when a database write fails (simulated with a temporary trigger).
 - A completed retry returns the original result and creates no second pair of ledger entries.
 - Concurrent requests with the same sender/key apply only one transfer.
@@ -51,24 +52,36 @@ The transfer unit tests (`TransferServiceTest`, `TransferRequestValidationTest`,
 - Interleaved opposite-direction transfers (A→B and B→A) complete without deadlock.
 - Mixed-case emails are normalized across registration, login, and transfer recipients, and the database rejects a non-normalized email.
 
+- Transfers by mobile number reach the recipient in both `09...` and `+639...` formats, and a retry naming the recipient by mobile number after email returns the original result.
+
 The opposite-direction test is timing-dependent: it is strong evidence that lock ordering prevents deadlocks, not a formal proof.
 
+## Registration and login scenarios
+- `MobileNumberNormalizerTest` and `CreateUserRequestValidationTest`: `+639...` normalization, mobile-number format, and exactly-six-digit PINs.
+- `UserServiceTest`: PIN hashing, canonical mobile storage, duplicate email and mobile checks, and translation of concurrent unique-constraint violations.
+- `LoginServiceTest` uses Spring Security's real `DaoAuthenticationProvider` and BCrypt with a fixed `Clock`: email and mobile login, wrong PIN, locking on the third failure, rejection of the correct PIN while locked, automatic unlock after 5 minutes, a fresh count after expiry, reset on success, and unknown identifiers.
+- `AuthControllerMvcTest` and `UserControllerMvcTest`: session creation on login, HTTP 401 `INVALID_CREDENTIALS`, HTTP 423 `ACCOUNT_LOCKED`, HTTP 409 `EMAIL_ALREADY_REGISTERED` / `MOBILE_NUMBER_ALREADY_REGISTERED`, HTTP 400 validation, and HTTP 403 without CSRF.
+
+Against PostgreSQL:
+- `UserRegistrationIntegrationTest` forces registration races deterministically: the second insert is confirmed blocked on the unique index (via `pg_locks`) before the first commits, and must fail as a duplicate email or mobile number. It also checks that the database rejects non-canonical mobile numbers.
+- `AuthIntegrationTest` covers HTTP login by email and both mobile formats with an email session principal, lockout and expiry (by moving `locked_until` into the past), reset on success, duplicate mobile numbers, and 10 concurrent wrong-PIN logins producing exactly 2 HTTP 401s, 8 locked responses, and a counter of 3.
+
 ### Test database
-The integration test uses a dedicated `jcash_banking_test_db` database owned by `jcash_banking_user`. Create it once:
+The PostgreSQL integration tests (`TransferIntegrationTest`, `UserRegistrationIntegrationTest`, `AuthIntegrationTest`) share `FreshTestDatabaseConfiguration` and one cached Spring context. They use a dedicated `jcash_banking_test_db` database owned by `jcash_banking_user`. Create it once:
 ```bash
 sudo -u postgres psql -c "CREATE DATABASE jcash_banking_test_db OWNER jcash_banking_user;"
 ```
 **Every run drops and recreates the entire schema of `jcash_banking_test_db`.** The test refuses to clean any database with a different name, so the development database is never wiped. Do not store anything in the test database.
 
 ### Running the full suite
-`BackendApplicationTests` uses the development database and `TransferIntegrationTest` uses the test database; both need PostgreSQL running and `DB_PASSWORD` exported:
+`BackendApplicationTests` uses the development database and the integration tests use the test database; all of them need PostgreSQL running and `DB_PASSWORD` exported:
 ```bash
 set -a; . ./.env; set +a
 ./backend/mvnw -f backend/pom.xml test
 ```
 Without PostgreSQL these tests fail rather than skip. In that case run the non-database tests and report the database-dependent limitation explicitly:
 ```bash
-./backend/mvnw -f backend/pom.xml -Dtest='**/*Test,!BackendApplicationTests,!TransferIntegrationTest' test
+./backend/mvnw -f backend/pom.xml -Dtest='**/*Test,!BackendApplicationTests,!*IntegrationTest' test
 ```
 A database test that did not run is not evidence that rollback, migration, or concurrency behavior passed.
 

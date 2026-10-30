@@ -3,7 +3,7 @@
 This document records the implemented data model. Flyway migrations are the source of truth for table names, columns, constraints, and relationships.
 
 ## Core concepts
-- **User:** identity and password hash; emails are stored trimmed and lowercase, and V6 enforces this with a check constraint so uniqueness is case-insensitive; never store plaintext passwords.
+- **User:** email, mobile number, display name, PIN hash, and login-lockout state; emails are stored trimmed and lowercase, and V6 enforces this with a check constraint so uniqueness is case-insensitive; never store plaintext PINs.
 - **Account:** wallet owner, currency, current balance, and JPA optimistic-lock version.
 - **Transfer idempotency record:** sender-scoped request key, original request payload, completion state, recipient, and resulting balances.
 - **Ledger entry:** immutable debit/credit record linked to an account.
@@ -20,6 +20,16 @@ This document records the implemented data model. Flyway migrations are the sour
 - Uppercase currency validation and non-negative stored post-transfer balances.
 
 The idempotency entity stores the completed response data so a retry can return the original result without creating new account changes or ledger entries. JPA entities are persistence models only; transfer responses use a DTO.
+
+## Implemented mobile and PIN login schema
+`V7__add_mobile_pin_login.sql` changes `users`:
+
+- Refuses to run if `users` already has rows, because existing users have no mobile number and a password hash cannot become a PIN hash.
+- Renames `password_hash` to `pin_hash` (BCrypt hash of the 6-digit PIN).
+- Adds `mobile_number VARCHAR(11) NOT NULL`, unique (`uq_users_mobile_number`) and checked against the canonical Philippine format `^09[0-9]{9}$`. `+639XXXXXXXXX` input is converted to `09XXXXXXXXX` before it is stored or looked up.
+- Adds `failed_login_attempts INTEGER NOT NULL DEFAULT 0` (non-negative) and nullable `locked_until TIMESTAMPTZ`. The limit (3) and lock duration (5 minutes) live in `LoginService`, not in the schema.
+
+Registration translates a unique violation on `users_email_key` or `uq_users_mobile_number` into HTTP 409, so two simultaneous registrations for the same email or mobile number cannot produce HTTP 500.
 
 ## Integrity rules
 - Use primary and foreign keys, appropriate unique constraints, and check constraints.
@@ -49,4 +59,4 @@ Recipient and sender account changes are made through `Account.debit` and `Accou
 These behaviours are verified against PostgreSQL by `TransferIntegrationTest`: concurrent same-key requests, concurrent overspending, interleaved opposite-direction transfers, and rollback after a database write failure.
 
 ## Migration discipline
-The database starts with the existing V1-V4 schema migrations, then applies V5 for transfer support and V6 to enforce normalized user emails. Once a Flyway migration has been applied, do not edit it; create a new versioned migration for future changes. Hibernate runs with `ddl-auto=validate`, so fresh-database migration correctness and entity/schema alignment must be checked together. `TransferIntegrationTest` does this on every run by cleaning the dedicated test database and applying V1-V6 from scratch before the Spring context validates the entities.
+The database starts with the existing V1-V4 schema migrations, then applies V5 for transfer support, V6 to enforce normalized user emails, and V7 for mobile-number and PIN login. Once a Flyway migration has been applied, do not edit it; create a new versioned migration for future changes. Hibernate runs with `ddl-auto=validate`, so fresh-database migration correctness and entity/schema alignment must be checked together. The PostgreSQL integration tests do this on every run by cleaning the dedicated test database and applying V1-V7 from scratch before the Spring context validates the entities.

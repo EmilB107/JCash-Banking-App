@@ -42,7 +42,7 @@ class TransferControllerMvcTest {
 
     private static final String SENDER = "sender@example.com";
     private static final String VALID_BODY =
-            "{\"recipientEmail\":\"recipient@example.com\",\"amount\":25.00}";
+            "{\"recipient\":\"recipient@example.com\",\"amount\":25.00}";
     private static final TransferRequest VALID_REQUEST =
             new TransferRequest("recipient@example.com", new BigDecimal("25.00"));
 
@@ -94,7 +94,7 @@ class TransferControllerMvcTest {
 
         mockMvc.perform(authenticatedTransfer("key-1")
                         .content("{\"senderEmail\":\"attacker@example.com\","
-                                + "\"recipientEmail\":\"recipient@example.com\",\"amount\":25.00}"))
+                                + "\"recipient\":\"recipient@example.com\",\"amount\":25.00}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.*", hasSize(7)))
                 .andExpect(jsonPath("$.senderAccountId").value(senderAccountId.toString()))
@@ -130,12 +130,13 @@ class TransferControllerMvcTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "{\"recipientEmail\":\"recipient@example.com\"}",
-            "{\"recipientEmail\":\"recipient@example.com\",\"amount\":0}",
-            "{\"recipientEmail\":\"recipient@example.com\",\"amount\":-5.00}",
-            "{\"recipientEmail\":\"recipient@example.com\",\"amount\":1.001}",
-            "{\"recipientEmail\":\"not-an-email\",\"amount\":25.00}",
-            "{\"recipientEmail\":\"  \",\"amount\":25.00}"
+            "{\"recipient\":\"recipient@example.com\"}",
+            "{\"recipient\":\"recipient@example.com\",\"amount\":0}",
+            "{\"recipient\":\"recipient@example.com\",\"amount\":-5.00}",
+            "{\"recipient\":\"recipient@example.com\",\"amount\":1.001}",
+            "{\"amount\":25.00}",
+            "{\"recipient\":\"\",\"amount\":25.00}",
+            "{\"recipient\":\"  \",\"amount\":25.00}"
     })
     void invalidBodyReturnsValidationError(String body) throws Exception {
         mockMvc.perform(authenticatedTransfer("key-1").content(body))
@@ -183,6 +184,29 @@ class TransferControllerMvcTest {
         mockMvc.perform(authenticatedTransfer("key-1").content(VALID_BODY))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("LOCK_CONFLICT"));
+    }
+
+    @Test
+    void mobileNumberRecipientIsPassedToService() throws Exception {
+        TransferRequest mobileRequest =
+                new TransferRequest("+639171234567", new BigDecimal("25.00"));
+        when(transferService.transfer(SENDER, "key-1", mobileRequest))
+                .thenReturn(new TransferResponse(
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        "recipient@example.com",
+                        new BigDecimal("25.00"),
+                        "PHP",
+                        new BigDecimal("75.00"),
+                        new BigDecimal("125.00")
+                ));
+
+        mockMvc.perform(authenticatedTransfer("key-1")
+                        .content("{\"recipient\":\"+639171234567\",\"amount\":25.00}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recipientEmail").value("recipient@example.com"));
+
+        verify(transferService).transfer(SENDER, "key-1", mobileRequest);
     }
 
     @Test

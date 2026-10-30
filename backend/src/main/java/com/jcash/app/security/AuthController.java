@@ -4,8 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,13 +20,13 @@ import com.jcash.app.security.dto.LoginResponse;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
+    private final LoginService loginService;
     private final SecurityContextRepository securityContextRepository;
 
     public AuthController(
-            AuthenticationManager authenticationManager,
+            LoginService loginService,
             SecurityContextRepository securityContextRepository) {
-        this.authenticationManager = authenticationManager;
+        this.loginService = loginService;
         this.securityContextRepository = securityContextRepository;
     }
 
@@ -38,11 +36,9 @@ public class AuthController {
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.email(),
-                        request.password()
-                )
+        Authentication authentication = loginService.login(
+                request.identifier(),
+                request.pin()
         );
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();

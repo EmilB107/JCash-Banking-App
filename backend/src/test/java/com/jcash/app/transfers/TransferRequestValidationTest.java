@@ -22,16 +22,16 @@ class TransferRequestValidationTest {
     }
 
     @Test
-    void rejectsMissingOrInvalidRecipientEmail() {
-        for (String recipientEmail : new String[] {
+    void rejectsMissingBlankOrOverlongRecipient() {
+        for (String recipient : new String[] {
                 null,
                 "",
                 "   ",
-                "not-an-email"
+                "x".repeat(256)
         }) {
             Set<ConstraintViolation<TransferRequest>> violations =
                     validator.validate(new TransferRequest(
-                            recipientEmail,
+                            recipient,
                             new BigDecimal("10.00")
                     ));
 
@@ -73,13 +73,19 @@ class TransferRequestValidationTest {
     }
 
     @Test
-    void acceptsValidRecipientAndAmount() {
-        Set<ConstraintViolation<TransferRequest>> violations =
-                validator.validate(new TransferRequest(
-                        "recipient@example.com",
-                        new BigDecimal("10.00")
-                ));
+    void acceptsEmailOrMobileNumberRecipientAndValidAmount() {
+        for (String recipient : new String[] {
+                "recipient@example.com",
+                "09171234567",
+                "+639171234567"
+        }) {
+            Set<ConstraintViolation<TransferRequest>> violations =
+                    validator.validate(new TransferRequest(
+                            recipient,
+                            new BigDecimal("10.00")
+                    ));
 
-        assertThat(violations).isEmpty();
+            assertThat(violations).isEmpty();
+        }
     }
 }

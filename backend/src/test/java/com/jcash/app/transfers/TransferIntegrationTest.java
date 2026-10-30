@@ -43,6 +43,8 @@ class TransferIntegrationTest {
 
     private static final String ALICE = "alice@example.com";
     private static final String BOB = "bob@example.com";
+    private static final String ALICE_MOBILE = "09170000001";
+    private static final String BOB_MOBILE = "09170000002";
 
     @Autowired
     private TransferService transferService;
@@ -78,7 +80,7 @@ class TransferIntegrationTest {
 
         assertThat(history)
                 .extracting(row -> row.get("version"))
-                .containsExactly("1", "2", "3", "4", "5", "6");
+                .containsExactly("1", "2", "3", "4", "5", "6", "7");
         assertThat(history)
                 .extracting(row -> row.get("success"))
                 .containsOnly(true);
@@ -87,19 +89,20 @@ class TransferIntegrationTest {
     @Test
     void databaseRejectsNonNormalizedEmail() {
         assertThatThrownBy(() -> userRepository.saveAndFlush(
-                new User("Mixed@Example.com", "Mixed", "hash")))
+                new User("Mixed@Example.com", "09170000099", "Mixed", "hash")))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
     void mixedCaseEmailsWorkAcrossRegistrationLoginAndTransfer() {
-        createUserWithBalance(ALICE, "100.00");
+        createUserWithBalance(ALICE, ALICE_MOBILE, "100.00");
 
-        User carol = userService.createUser("  Carol@Example.COM ", "Carol", "password123");
+        User carol = userService.createUser(
+                "  Carol@Example.COM ", "09170000003", "Carol", "123456");
 
         assertThat(carol.getEmail()).isEqualTo("carol@example.com");
         assertThatThrownBy(() -> userService.createUser(
-                "CAROL@example.com", "Carol Again", "password123"))
+                "CAROL@example.com", "09170000004", "Carol Again", "123456"))
                 .isInstanceOf(UserAlreadyExistsException.class);
         assertThat(userDetailsService.loadUserByUsername("CAROL@EXAMPLE.COM").getUsername())
                 .isEqualTo("carol@example.com");
@@ -113,8 +116,8 @@ class TransferIntegrationTest {
 
     @Test
     void successfulTransferPersistsBalancesEntriesAndCompletedIdempotencyRecord() {
-        createUserWithBalance(ALICE, "100.00");
-        createUserWithBalance(BOB, "50.00");
+        createUserWithBalance(ALICE, ALICE_MOBILE, "100.00");
+        createUserWithBalance(BOB, BOB_MOBILE, "50.00");
 
         TransferResponse response = transfer(ALICE, "key-1", BOB, "25.00");
 
@@ -134,8 +137,8 @@ class TransferIntegrationTest {
 
     @Test
     void persistenceFailureRollsBackAccountsEntriesAndIdempotencyRecord() {
-        createUserWithBalance(ALICE, "100.00");
-        createUserWithBalance(BOB, "50.00");
+        createUserWithBalance(ALICE, ALICE_MOBILE, "100.00");
+        createUserWithBalance(BOB, BOB_MOBILE, "50.00");
         long aliceVersion = versionOf(ALICE);
         long bobVersion = versionOf(BOB);
         long entriesBefore = countRows("transaction_entries");
@@ -172,9 +175,39 @@ class TransferIntegrationTest {
     }
 
     @Test
+    void transferByMobileNumberInEitherFormatReachesRecipient() {
+        createUserWithBalance(ALICE, ALICE_MOBILE, "100.00");
+        createUserWithBalance(BOB, BOB_MOBILE, "0.00");
+
+        TransferResponse local = transfer(ALICE, "key-1", BOB_MOBILE, "10.00");
+        TransferResponse international = transfer(ALICE, "key-2", "+639170000002", "15.00");
+
+        assertThat(local.recipientEmail()).isEqualTo(BOB);
+        assertThat(international.recipientEmail()).isEqualTo(BOB);
+        assertThat(balanceOf(BOB)).isEqualByComparingTo("25.00");
+        assertThat(balanceOf(ALICE)).isEqualByComparingTo("75.00");
+        assertThat(jdbcTemplate.queryForList(
+                "SELECT recipient_email FROM transfer_idempotency_keys", String.class))
+                .containsOnly(BOB);
+    }
+
+    @Test
+    void retryByMobileNumberAfterEmailReturnsOriginalResult() {
+        createUserWithBalance(ALICE, ALICE_MOBILE, "100.00");
+        createUserWithBalance(BOB, BOB_MOBILE, "50.00");
+
+        TransferResponse first = transfer(ALICE, "key-1", BOB, "25.00");
+        TransferResponse retry = transfer(ALICE, "key-1", "+639170000002", "25.00");
+
+        assertThat(retry).isEqualTo(first);
+        assertThat(balanceOf(ALICE)).isEqualByComparingTo("75.00");
+        assertThat(countTransferEntries()).isEqualTo(2);
+    }
+
+    @Test
     void completedRetryReturnsOriginalResultWithoutSecondLedgerPair() {
-        createUserWithBalance(ALICE, "100.00");
-        createUserWithBalance(BOB, "50.00");
+        createUserWithBalance(ALICE, ALICE_MOBILE, "100.00");
+        createUserWithBalance(BOB, BOB_MOBILE, "50.00");
 
         TransferResponse first = transfer(ALICE, "key-1", BOB, "25.00");
         TransferResponse retry = transfer(ALICE, "key-1", BOB, "25.00");
@@ -186,8 +219,8 @@ class TransferIntegrationTest {
 
     @Test
     void concurrentDuplicateRequestsApplyTransferOnce() throws Exception {
-        createUserWithBalance(ALICE, "100.00");
-        createUserWithBalance(BOB, "50.00");
+        createUserWithBalance(ALICE, ALICE_MOBILE, "100.00");
+        createUserWithBalance(BOB, BOB_MOBILE, "50.00");
 
         List<Callable<TransferResponse>> requests = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
@@ -207,8 +240,8 @@ class TransferIntegrationTest {
 
     @Test
     void concurrentTransfersCannotOverspendSender() throws Exception {
-        createUserWithBalance(ALICE, "1000.00");
-        createUserWithBalance(BOB, "0.00");
+        createUserWithBalance(ALICE, ALICE_MOBILE, "1000.00");
+        createUserWithBalance(BOB, BOB_MOBILE, "0.00");
 
         List<Callable<TransferResponse>> requests = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
@@ -237,8 +270,8 @@ class TransferIntegrationTest {
 
     @Test
     void oppositeDirectionTransfersCompleteWithoutDeadlock() throws Exception {
-        createUserWithBalance(ALICE, "1000.00");
-        createUserWithBalance(BOB, "1000.00");
+        createUserWithBalance(ALICE, ALICE_MOBILE, "1000.00");
+        createUserWithBalance(BOB, BOB_MOBILE, "1000.00");
 
         List<Callable<TransferResponse>> requests = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
@@ -260,17 +293,17 @@ class TransferIntegrationTest {
     private TransferResponse transfer(
             String senderEmail,
             String idempotencyKey,
-            String recipientEmail,
+            String recipient,
             String amount) {
         return transferService.transfer(
                 senderEmail,
                 idempotencyKey,
-                new TransferRequest(recipientEmail, new BigDecimal(amount))
+                new TransferRequest(recipient, new BigDecimal(amount))
         );
     }
 
-    private void createUserWithBalance(String email, String balance) {
-        User user = userRepository.save(new User(email, email, "hash"));
+    private void createUserWithBalance(String email, String mobileNumber, String balance) {
+        User user = userRepository.save(new User(email, mobileNumber, email, "hash"));
         Account account = new Account(user);
         BigDecimal amount = new BigDecimal(balance);
         if (amount.signum() > 0) {

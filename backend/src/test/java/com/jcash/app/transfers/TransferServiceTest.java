@@ -16,6 +16,7 @@ import com.jcash.app.transfers.exception.InvalidTransferAmountException;
 import com.jcash.app.transfers.exception.RecipientNotFoundException;
 import com.jcash.app.transfers.exception.SelfTransferNotAllowedException;
 import com.jcash.app.users.User;
+import com.jcash.app.users.UserLookupService;
 import com.jcash.app.users.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,8 +66,8 @@ class TransferServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        senderUser = new User("sender@example.com", "Sender", "hash");
-        recipientUser = new User("recipient@example.com", "Recipient", "hash");
+        senderUser = new User("sender@example.com", "09170000001", "Sender", "hash");
+        recipientUser = new User("recipient@example.com", "09170000002", "Recipient", "hash");
         UUID senderUserId = UUID.randomUUID();
         UUID recipientUserId = UUID.randomUUID();
         setField(senderUser, "id", senderUserId);
@@ -94,7 +95,8 @@ class TransferServiceTest {
                 accountRepository,
                 transactionEntryRepository,
                 idempotencyRepository,
-                userRepository
+                userRepository,
+                new UserLookupService(userRepository)
         );
     }
 
@@ -158,6 +160,47 @@ class TransferServiceTest {
                 ArgumentCaptor.forClass(TransferIdempotencyKey.class);
         verify(idempotencyRepository).saveAndFlush(reservation.capture());
         assertThat(reservation.getValue().getRecipientEmail()).isEqualTo("recipient@example.com");
+    }
+
+    @Test
+    void mobileNumberRecipientInEitherFormatResolvesAndRecordsEmail() {
+        when(userRepository.findByMobileNumber("09170000002"))
+                .thenReturn(Optional.of(recipientUser));
+
+        for (String recipient : new String[] {"09170000002", " +639170000002 "}) {
+            TransferResponse result = transferTo("key-" + recipient.trim(), recipient, "10.00");
+
+            assertThat(result.recipientAccountId()).isEqualTo(recipientAccount.getId());
+            assertThat(result.recipientEmail()).isEqualTo("recipient@example.com");
+        }
+
+        ArgumentCaptor<TransferIdempotencyKey> reservations =
+                ArgumentCaptor.forClass(TransferIdempotencyKey.class);
+        verify(idempotencyRepository, org.mockito.Mockito.times(2))
+                .saveAndFlush(reservations.capture());
+        assertThat(reservations.getAllValues())
+                .extracting(TransferIdempotencyKey::getRecipientEmail)
+                .containsOnly("recipient@example.com");
+        verify(userRepository, never()).findByEmail("09170000002");
+    }
+
+    @Test
+    void completedRetryByMobileNumberAfterEmailReturnsOriginalResult() {
+        when(userRepository.findByMobileNumber("09170000002"))
+                .thenReturn(Optional.of(recipientUser));
+        TransferIdempotencyKey existing = new TransferIdempotencyKey(
+                senderAccount, "key-1", "recipient@example.com", new BigDecimal("25.00"));
+        existing.markCompleted(recipientAccount, new BigDecimal("75.00"),
+                new BigDecimal("75.00"), "PHP");
+        when(idempotencyRepository.findBySenderAccountIdAndIdempotencyKey(
+                senderAccount.getId(), "key-1"))
+                .thenReturn(Optional.of(existing));
+
+        TransferResponse result = transferTo("key-1", "09170000002", "25.00");
+
+        assertThat(result).isEqualTo(existing.toResponse());
+        verify(idempotencyRepository, never()).saveAndFlush(any());
+        verifyNoInteractions(transactionEntryRepository);
     }
 
     @Test
@@ -229,6 +272,26 @@ class TransferServiceTest {
     }
 
     @Test
+    void rejectsUnknownMobileNumberRecipient() {
+        when(userRepository.findByMobileNumber("09179999999"))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> transferTo("key-1", "09179999999", "25.00"))
+                .isInstanceOf(RecipientNotFoundException.class)
+                .hasMessageContaining("09179999999");
+    }
+
+    @Test
+    void rejectsSelfTransferByMobileNumber() {
+        when(userRepository.findByMobileNumber("09170000001"))
+                .thenReturn(Optional.of(senderUser));
+
+        assertThatThrownBy(() -> transferTo("key-1", "09170000001", "25.00"))
+                .isInstanceOf(SelfTransferNotAllowedException.class);
+        verifyNoInteractions(accountRepository, idempotencyRepository, transactionEntryRepository);
+    }
+
+    @Test
     void rejectsSelfTransferBeforeLockingOrWriting() {
         when(userRepository.findByEmail("recipient@example.com"))
                 .thenReturn(Optional.of(senderUser));
@@ -297,15 +360,15 @@ class TransferServiceTest {
         return transferTo(key, "recipient@example.com", amount);
     }
 
-    private TransferResponse transferTo(String key, String recipientEmail, String amount) {
-        return transferTo(key, recipientEmail, new BigDecimal(amount));
+    private TransferResponse transferTo(String key, String recipient, String amount) {
+        return transferTo(key, recipient, new BigDecimal(amount));
     }
 
-    private TransferResponse transferTo(String key, String recipientEmail, BigDecimal amount) {
+    private TransferResponse transferTo(String key, String recipient, BigDecimal amount) {
         return transferService.transfer(
                 "sender@example.com",
                 key,
-                new TransferRequest(recipientEmail, amount)
+                new TransferRequest(recipient, amount)
         );
     }
 

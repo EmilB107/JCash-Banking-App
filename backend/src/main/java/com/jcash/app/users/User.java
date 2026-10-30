@@ -9,6 +9,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -23,11 +24,20 @@ public class User {
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
+    @Column(name = "mobile_number", nullable = false, unique = true, length = 11)
+    private String mobileNumber;
+
     @Column(name = "display_name", nullable = false, length = 100)
     private String displayName;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
-    private String passwordHash;
+    @Column(name = "pin_hash", nullable = false, length = 255)
+    private String pinHash;
+
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts;
+
+    @Column(name = "locked_until")
+    private Instant lockedUntil;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -38,10 +48,11 @@ public class User {
     protected User() {
     }
 
-    public User(String email, String displayName, String passwordHash) {
+    public User(String email, String mobileNumber, String displayName, String pinHash) {
         this.email = email;
+        this.mobileNumber = mobileNumber;
         this.displayName = displayName;
-        this.passwordHash = passwordHash;
+        this.pinHash = pinHash;
     }
 
     @PrePersist
@@ -56,6 +67,32 @@ public class User {
         updatedAt = Instant.now();
     }
 
+    public boolean isLoginLocked(Instant now) {
+        return lockedUntil != null && lockedUntil.isAfter(now);
+    }
+
+    // An expired lock gives a fresh set of attempts rather than carrying the old count.
+    public void clearExpiredLoginLock(Instant now) {
+        if (lockedUntil != null && !lockedUntil.isAfter(now)) {
+            failedLoginAttempts = 0;
+            lockedUntil = null;
+        }
+    }
+
+    public boolean recordFailedLogin(Instant now, int maxAttempts, Duration lockDuration) {
+        failedLoginAttempts++;
+        if (failedLoginAttempts >= maxAttempts) {
+            lockedUntil = now.plus(lockDuration);
+            return true;
+        }
+        return false;
+    }
+
+    public void resetFailedLoginAttempts() {
+        failedLoginAttempts = 0;
+        lockedUntil = null;
+    }
+
     public UUID getId() {
         return id;
     }
@@ -68,6 +105,14 @@ public class User {
         this.email = email;
     }
 
+    public String getMobileNumber() {
+        return mobileNumber;
+    }
+
+    public void setMobileNumber(String mobileNumber) {
+        this.mobileNumber = mobileNumber;
+    }
+
     public String getDisplayName() {
         return displayName;
     }
@@ -76,12 +121,20 @@ public class User {
         this.displayName = displayName;
     }
 
-    public String getPasswordHash() {
-        return passwordHash;
+    public String getPinHash() {
+        return pinHash;
     }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
+    public void setPinHash(String pinHash) {
+        this.pinHash = pinHash;
+    }
+
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    public Instant getLockedUntil() {
+        return lockedUntil;
     }
 
     public Instant getCreatedAt() {

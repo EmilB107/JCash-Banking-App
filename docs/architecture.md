@@ -40,8 +40,9 @@ requirements without forcing all unrelated classes into broad top-level packages
 
 This mapping preserves the assessment’s required object-oriented design while
 using maintainable feature-based packages. The assessment’s “three login
-attempts” requirement should be implemented as server-side authentication
-failure tracking or rate limiting, rather than a console-only retry loop.
+attempts” requirement is implemented as server-side failure tracking: the user
+row is locked for each attempt, and the third consecutive wrong PIN locks the
+account for 5 minutes (HTTP 423), rather than a console-only retry loop.
 
 ## Request flow
 Angular UI → REST API controller → validation/service layer → repository/JPA → PostgreSQL. Responses should use DTOs and appropriate HTTP status codes. Centralized exception handling should provide consistent error responses without exposing internal details.

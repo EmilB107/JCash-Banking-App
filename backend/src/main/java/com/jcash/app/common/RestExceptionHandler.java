@@ -2,6 +2,7 @@ package com.jcash.app.common;
 
 import com.jcash.app.accounts.exception.AccountNotFoundException;
 import com.jcash.app.accounts.exception.InvalidCashInAmountException;
+import com.jcash.app.security.LoginService;
 import com.jcash.app.transfers.exception.IdempotencyKeyConflictException;
 import com.jcash.app.transfers.exception.IdempotencyKeyInProgressException;
 import com.jcash.app.transfers.exception.InsufficientFundsException;
@@ -9,6 +10,7 @@ import com.jcash.app.transfers.exception.InvalidIdempotencyKeyException;
 import com.jcash.app.transfers.exception.InvalidTransferAmountException;
 import com.jcash.app.transfers.exception.RecipientNotFoundException;
 import com.jcash.app.transfers.exception.SelfTransferNotAllowedException;
+import com.jcash.app.users.exception.MobileNumberAlreadyRegisteredException;
 import com.jcash.app.users.exception.UserAlreadyExistsException;
 import com.jcash.app.users.exception.UserNotFoundException;
 import jakarta.persistence.OptimisticLockException;
@@ -17,6 +19,7 @@ import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -31,10 +34,25 @@ public class RestExceptionHandler {
         return new ApiError("EMAIL_ALREADY_REGISTERED", exception.getMessage());
     }
 
+    @ExceptionHandler(MobileNumberAlreadyRegisteredException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleMobileNumberAlreadyRegistered(
+            MobileNumberAlreadyRegisteredException exception) {
+        return new ApiError("MOBILE_NUMBER_ALREADY_REGISTERED", exception.getMessage());
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ApiError handleBadCredentials() {
-        return new ApiError("INVALID_CREDENTIALS", "Email or password is incorrect");
+        return new ApiError("INVALID_CREDENTIALS", "Email/mobile number or PIN is incorrect");
+    }
+
+    @ExceptionHandler(LockedException.class)
+    @ResponseStatus(HttpStatus.LOCKED)
+    public ApiError handleAccountLocked() {
+        return new ApiError("ACCOUNT_LOCKED", "Account is locked after "
+                + LoginService.MAX_FAILED_ATTEMPTS + " failed login attempts. Try again in "
+                + LoginService.LOCK_DURATION.toMinutes() + " minutes.");
     }
 
     @ExceptionHandler({

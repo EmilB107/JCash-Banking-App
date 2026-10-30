@@ -2,8 +2,9 @@
 
 The backend uses **Java 21** and **Spring Boot 4.1.2** with Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, Spring Security, and PostgreSQL. It currently supports:
 
-- user registration with BCrypt password hashing
-- session-based login and logout
+- user registration with email, Philippine mobile number, and a BCrypt-hashed 6-digit PIN
+- session-based login by email or mobile number with PIN, and logout
+- account lockout for 5 minutes after 3 consecutive failed logins
 - CSRF protection
 - authenticated current-user access
 - authenticated account retrieval
@@ -77,8 +78,8 @@ The provided POM includes Spring Data JPA, Flyway, Bean Validation, Spring Web M
 The current authentication flow uses server-side HTTP sessions:
 
 1. `GET /api/auth/csrf` to receive the CSRF token and `XSRF-TOKEN` cookie.
-2. `POST /api/users` to register a user and automatically create a PHP account with a zero balance.
-3. `POST /api/auth/login` to authenticate and establish the session.
+2. `POST /api/users` with `email`, `mobileNumber`, `displayName`, and `pin` to register a user and automatically create a PHP account with a zero balance.
+3. `POST /api/auth/login` with `identifier` (email or mobile number) and `pin` to authenticate and establish the session.
 4. `GET /api/users/me` to retrieve the authenticated user's email.
 5. `GET /api/accounts/me` to retrieve the authenticated user's PHP account summary.
 6. `POST /api/accounts/me/cash-in` to increase that account balance with a positive `BigDecimal` amount and record a CREDIT/CASH_IN transaction entry in the same transaction.
@@ -90,13 +91,17 @@ State-changing requests must include the CSRF token in the `X-XSRF-TOKEN` header
 
 Emails are case-insensitive. Registration, login, and transfer recipients are trimmed and lowercased before use, so `Bob@Example.com` and `bob@example.com` are the same account.
 
-`POST /api/transfers` requires the `Idempotency-Key` header. The key must be nonblank and no longer than 255 characters. The JSON body contains only `recipientEmail` and `amount`; the sender is always derived from the authenticated session identity. The recipient must exist, must have an account, and must not be the sender. A successful response contains sender/recipient account IDs, recipient email, amount, currency, and both resulting balances.
+Mobile numbers are required and unique. Registration accepts `09XXXXXXXXX` or `+639XXXXXXXXX` and stores `09XXXXXXXXX`; the PIN must be exactly six digits. A duplicate email returns HTTP 409 `EMAIL_ALREADY_REGISTERED` and a duplicate mobile number returns HTTP 409 `MOBILE_NUMBER_ALREADY_REGISTERED`.
 
-Transfers debit the sender with `Account.debit`, credit the recipient with `Account.credit`, and write one TRANSFER/DEBIT and one TRANSFER/CREDIT entry. Account updates, both entries, and the idempotency record commit in one transaction. A repeated key with the same recipient and amount returns the original completed response; reuse with different request data or while the original request is in progress returns HTTP 409. Invalid input returns HTTP 400, an unknown recipient returns HTTP 404, insufficient funds or self-transfer returns HTTP 400, an optimistic-lock conflict returns HTTP 409 `OPTIMISTIC_LOCK_CONFLICT`, and a lock-acquisition failure such as a lock timeout returns HTTP 409 `LOCK_CONFLICT`. Both 409 lock responses are safe to retry with the same `Idempotency-Key`. Requests without a session return HTTP 401, and state-changing requests without a CSRF token return HTTP 403.
+A login identifier containing `@` is treated as an email; anything else is treated as a mobile number in either format. The session principal is always the user's email. A wrong PIN or unknown identifier returns HTTP 401 `INVALID_CREDENTIALS`. The third consecutive wrong PIN locks the account for 5 minutes and returns HTTP 423 `ACCOUNT_LOCKED`; while locked, even the correct PIN returns HTTP 423. The lock expires automatically, and a successful login resets the failure count.
+
+`POST /api/transfers` requires the `Idempotency-Key` header. The key must be nonblank and no longer than 255 characters. The JSON body contains only `recipient` (email or mobile number, resolved like the login identifier) and `amount`; the sender is always derived from the authenticated session identity. The recipient must exist, must have an account, and must not be the sender. A successful response contains sender/recipient account IDs, recipient email, amount, currency, and both resulting balances.
+
+Transfers debit the sender with `Account.debit`, credit the recipient with `Account.credit`, and write one TRANSFER/DEBIT and one TRANSFER/CREDIT entry. Account updates, both entries, and the idempotency record commit in one transaction. A repeated key with the same resolved recipient and amount (even if named by mobile number one time and email the next) returns the original completed response; reuse with different request data or while the original request is in progress returns HTTP 409. Invalid input returns HTTP 400, an unknown recipient returns HTTP 404, insufficient funds or self-transfer returns HTTP 400, an optimistic-lock conflict returns HTTP 409 `OPTIMISTIC_LOCK_CONFLICT`, and a lock-acquisition failure such as a lock timeout returns HTTP 409 `LOCK_CONFLICT`. Both 409 lock responses are safe to retry with the same `Idempotency-Key`. Requests without a session return HTTP 401, and state-changing requests without a CSRF token return HTTP 403.
 
 The sender and recipient account rows are locked in a consistent order (ascending user ID), so simultaneous opposite-direction transfers wait instead of deadlocking.
 
-Account and transaction endpoints do not accept a user ID from the client. The server derives ownership from the authenticated session identity. Account responses expose only the account ID, currency, balance, creation timestamp, and update timestamp. Transaction-history responses expose only the transaction ID, account ID, transaction type, direction, amount, currency, balance after the transaction, and creation timestamp; password hashes, JPA entities, and user relationships are not returned.
+Account and transaction endpoints do not accept a user ID from the client. The server derives ownership from the authenticated session identity. Account responses expose only the account ID, currency, balance, creation timestamp, and update timestamp. Transaction-history responses expose only the transaction ID, account ID, transaction type, direction, amount, currency, balance after the transaction, and creation timestamp; PIN hashes, JPA entities, and user relationships are not returned.
 
 ## Configuration principles
 - Use environment variables for secrets and deployment-specific configuration.
@@ -105,4 +110,4 @@ Account and transaction endpoints do not accept a user ID from the client. The s
 - See [database setup](database-setup.md) for PostgreSQL service and role commands.
 
 ## Running tests
-The full suite needs PostgreSQL running, `DB_PASSWORD` exported, and a separate `jcash_banking_test_db` database for the transfer integration test, whose schema is wiped on every run. See [testing](testing.md#test-database) for the one-time setup command and the non-database fallback.
+The full suite needs PostgreSQL running, `DB_PASSWORD` exported, and a separate `jcash_banking_test_db` database for the integration tests, whose schema is wiped on every run. See [testing](testing.md#test-database) for the one-time setup command and the non-database fallback.

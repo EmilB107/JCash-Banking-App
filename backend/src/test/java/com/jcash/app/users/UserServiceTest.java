@@ -2,6 +2,7 @@ package com.jcash.app.users;
 
 import com.jcash.app.accounts.Account;
 import com.jcash.app.accounts.AccountRepository;
+import com.jcash.app.users.exception.MobileNumberAlreadyRegisteredException;
 import com.jcash.app.users.exception.UserAlreadyExistsException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
+    private static final String EMAIL = "demo@example.com";
+    private static final String MOBILE = "09171234567";
+    private static final String PIN = "123456";
+
     @Mock
     private UserRepository userRepository;
 
@@ -46,24 +51,20 @@ class UserServiceTest {
     }
 
     @Test
-    void createUserHashesPasswordAndCreatesPhpAccount() {
-        when(userRepository.existsByEmail("demo@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("bcrypt-hash");
-        when(userRepository.saveAndFlush(any(User.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+    void createUserHashesPinAndCreatesPhpAccount() {
+        stubSuccessfulSave();
 
-        User user = userService.createUser(
-                "demo@example.com",
-                "Demo User",
-                "password123"
-        );
+        User user = userService.createUser(EMAIL, MOBILE, "Demo User", PIN);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).saveAndFlush(userCaptor.capture());
-        verify(passwordEncoder).encode("password123");
+        verify(passwordEncoder).encode(PIN);
 
         assertThat(user).isSameAs(userCaptor.getValue());
-        assertThat(user.getPasswordHash()).isEqualTo("bcrypt-hash");
+        assertThat(user.getPinHash()).isEqualTo("bcrypt-hash");
+        assertThat(user.getMobileNumber()).isEqualTo(MOBILE);
+        assertThat(user.getFailedLoginAttempts()).isZero();
+        assertThat(user.getLockedUntil()).isNull();
 
         ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
         verify(accountRepository).save(accountCaptor.capture());
@@ -77,15 +78,11 @@ class UserServiceTest {
 
     @Test
     void createUserRejectsDuplicateEmailBeforeHashingOrSaving() {
-        when(userRepository.existsByEmail("demo@example.com")).thenReturn(true);
+        when(userRepository.existsByEmail(EMAIL)).thenReturn(true);
 
-        assertThatThrownBy(() -> userService.createUser(
-                "demo@example.com",
-                "Demo User",
-                "password123"
-        ))
+        assertThatThrownBy(() -> userService.createUser(EMAIL, MOBILE, "Demo User", PIN))
                 .isInstanceOf(UserAlreadyExistsException.class)
-                .hasMessageContaining("demo@example.com");
+                .hasMessageContaining(EMAIL);
 
         verify(passwordEncoder, never()).encode(any(String.class));
         verify(userRepository, never()).saveAndFlush(any(User.class));
@@ -94,32 +91,48 @@ class UserServiceTest {
 
     @Test
     void createUserStoresTrimmedLowercaseEmail() {
-        when(userRepository.existsByEmail("demo@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("bcrypt-hash");
-        when(userRepository.saveAndFlush(any(User.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        stubSuccessfulSave();
 
-        User user = userService.createUser(
-                "  Demo@Example.COM ",
-                "Demo User",
-                "password123"
-        );
+        User user = userService.createUser("  Demo@Example.COM ", MOBILE, "Demo User", PIN);
 
-        assertThat(user.getEmail()).isEqualTo("demo@example.com");
-        verify(userRepository).existsByEmail("demo@example.com");
+        assertThat(user.getEmail()).isEqualTo(EMAIL);
+        verify(userRepository).existsByEmail(EMAIL);
     }
 
     @Test
     void createUserRejectsDuplicateEmailRegardlessOfCase() {
-        when(userRepository.existsByEmail("demo@example.com")).thenReturn(true);
+        when(userRepository.existsByEmail(EMAIL)).thenReturn(true);
 
         assertThatThrownBy(() -> userService.createUser(
-                "DEMO@example.com",
-                "Demo User",
-                "password123"
-        ))
+                "DEMO@example.com", MOBILE, "Demo User", PIN))
                 .isInstanceOf(UserAlreadyExistsException.class)
-                .hasMessageContaining("demo@example.com");
+                .hasMessageContaining(EMAIL);
+
+        verify(passwordEncoder, never()).encode(any(String.class));
+        verify(userRepository, never()).saveAndFlush(any(User.class));
+    }
+
+    @Test
+    void createUserStoresInternationalMobileNumberInCanonicalForm() {
+        stubSuccessfulSave();
+
+        User user = userService.createUser(EMAIL, " +639171234567 ", "Demo User", PIN);
+
+        assertThat(user.getMobileNumber()).isEqualTo(MOBILE);
+        verify(userRepository).existsByMobileNumber(MOBILE);
+    }
+
+    @Test
+    void createUserRejectsDuplicateMobileNumberInEitherFormat() {
+        when(userRepository.existsByEmail(EMAIL)).thenReturn(false);
+        when(userRepository.existsByMobileNumber(MOBILE)).thenReturn(true);
+
+        for (String mobileNumber : new String[] {MOBILE, "+639171234567"}) {
+            assertThatThrownBy(() -> userService.createUser(
+                    EMAIL, mobileNumber, "Demo User", PIN))
+                    .isInstanceOf(MobileNumberAlreadyRegisteredException.class)
+                    .hasMessageContaining(MOBILE);
+        }
 
         verify(passwordEncoder, never()).encode(any(String.class));
         verify(userRepository, never()).saveAndFlush(any(User.class));
@@ -127,18 +140,22 @@ class UserServiceTest {
 
     @Test
     void createUserTranslatesConcurrentDuplicateEmailViolation() {
-        when(userRepository.existsByEmail("demo@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("bcrypt-hash");
-        when(userRepository.saveAndFlush(any(User.class)))
-                .thenThrow(integrityViolation(UserService.EMAIL_UNIQUE_CONSTRAINT));
+        stubSaveFailure(integrityViolation(UserService.EMAIL_UNIQUE_CONSTRAINT));
 
-        assertThatThrownBy(() -> userService.createUser(
-                "demo@example.com",
-                "Demo User",
-                "password123"
-        ))
+        assertThatThrownBy(() -> userService.createUser(EMAIL, MOBILE, "Demo User", PIN))
                 .isInstanceOf(UserAlreadyExistsException.class)
-                .hasMessageContaining("demo@example.com");
+                .hasMessageContaining(EMAIL);
+
+        verify(accountRepository, never()).save(any(Account.class));
+    }
+
+    @Test
+    void createUserTranslatesConcurrentDuplicateMobileNumberViolation() {
+        stubSaveFailure(integrityViolation(UserService.MOBILE_NUMBER_UNIQUE_CONSTRAINT));
+
+        assertThatThrownBy(() -> userService.createUser(EMAIL, MOBILE, "Demo User", PIN))
+                .isInstanceOf(MobileNumberAlreadyRegisteredException.class)
+                .hasMessageContaining(MOBILE);
 
         verify(accountRepository, never()).save(any(Account.class));
     }
@@ -146,19 +163,24 @@ class UserServiceTest {
     @Test
     void createUserRethrowsUnrelatedIntegrityViolation() {
         DataIntegrityViolationException unrelated =
-                integrityViolation("chk_users_email_normalized");
-        when(userRepository.existsByEmail("demo@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("bcrypt-hash");
-        when(userRepository.saveAndFlush(any(User.class))).thenThrow(unrelated);
+                integrityViolation("chk_users_mobile_number_format");
+        stubSaveFailure(unrelated);
 
-        assertThatThrownBy(() -> userService.createUser(
-                "demo@example.com",
-                "Demo User",
-                "password123"
-        ))
+        assertThatThrownBy(() -> userService.createUser(EMAIL, MOBILE, "Demo User", PIN))
                 .isSameAs(unrelated);
 
         verify(accountRepository, never()).save(any(Account.class));
+    }
+
+    private void stubSuccessfulSave() {
+        when(passwordEncoder.encode(PIN)).thenReturn("bcrypt-hash");
+        when(userRepository.saveAndFlush(any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+    }
+
+    private void stubSaveFailure(DataIntegrityViolationException exception) {
+        when(passwordEncoder.encode(PIN)).thenReturn("bcrypt-hash");
+        when(userRepository.saveAndFlush(any(User.class))).thenThrow(exception);
     }
 
     private static DataIntegrityViolationException integrityViolation(String constraintName) {
