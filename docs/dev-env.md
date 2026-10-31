@@ -33,11 +33,15 @@ From the repository root:
 cp .env.example .env
 ```
 
-Set the existing PostgreSQL role password in `.env`:
+Set the existing PostgreSQL role password and an operator account for Actuator metrics in `.env`:
 
 ```text
 DB_PASSWORD=your-local-postgresql-password
+ACTUATOR_USERNAME=ops
+ACTUATOR_PASSWORD=a-long-random-password
 ```
+
+Generate the Actuator password with `openssl rand -base64 24` (Linux/macOS) or see [Backend setup](backend-setup.md#actuator-operator-account) for Windows. The backend won't start if any of the three is missing.
 
 The `.env` file is ignored by Git. Install frontend dependencies once:
 

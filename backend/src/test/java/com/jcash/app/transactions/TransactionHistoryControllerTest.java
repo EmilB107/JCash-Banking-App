@@ -1,6 +1,7 @@
 package com.jcash.app.transactions;
 
 import com.jcash.app.transactions.dto.TransactionEntryResponse;
+import com.jcash.app.transactions.dto.TransactionHistoryPage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -39,17 +40,19 @@ class TransactionHistoryControllerTest {
                 null,
                 Instant.parse("2025-01-01T00:00:00Z")
         );
+        TransactionHistoryPage page =
+                new TransactionHistoryPage(List.of(response), 2, 5, 11, 3);
         when(authentication.getName()).thenReturn("demo@example.com");
         when(transactionHistoryService.findAuthenticatedUserHistory(
-                "demo@example.com"
-        )).thenReturn(List.of(response));
+                "demo@example.com", 2, 5
+        )).thenReturn(page);
 
         TransactionHistoryController controller =
                 new TransactionHistoryController(transactionHistoryService);
 
-        assertThat(controller.currentUserHistory(authentication))
-                .containsExactly(response);
+        assertThat(controller.currentUserHistory(authentication, 2, 5))
+                .isEqualTo(page);
         verify(transactionHistoryService)
-                .findAuthenticatedUserHistory("demo@example.com");
+                .findAuthenticatedUserHistory("demo@example.com", 2, 5);
     }
 }

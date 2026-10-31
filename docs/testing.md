@@ -44,7 +44,7 @@ The transfer unit tests (`TransferServiceTest`, `TransferRequestValidationTest`,
 ## Database-backed transfer scenarios
 `TransferIntegrationTest` runs against a real PostgreSQL database and verifies:
 
-- V1-V8 Flyway migrations apply to a fresh database and Hibernate `ddl-auto=validate` succeeds.
+- V1-V9 Flyway migrations apply to a fresh database and Hibernate `ddl-auto=validate` succeeds.
 - Both account updates, both transaction entries, and the idempotency record roll back together when a database write fails (simulated with a temporary trigger).
 - A completed retry returns the original result and creates no second pair of ledger entries.
 - Concurrent requests with the same sender/key apply only one transfer.
@@ -80,7 +80,7 @@ sudo -u postgres psql -c "CREATE DATABASE jcash_banking_test_db OWNER jcash_bank
 **Every run drops and recreates the entire schema of `jcash_banking_test_db`.** The test refuses to clean any database with a different name, so the development database is never wiped. Do not store anything in the test database.
 
 ### Running the full suite
-`BackendApplicationTests` uses the development database and the integration tests use the test database; all of them need PostgreSQL running and `DB_PASSWORD` exported:
+`BackendApplicationTests` uses the development database and the integration tests use the test database; all of them need PostgreSQL running and `DB_PASSWORD`, `ACTUATOR_USERNAME`, and `ACTUATOR_PASSWORD` exported (loading `.env` as below does this):
 ```bash
 set -a; . ./.env; set +a
 ./backend/mvnw -f backend/pom.xml test

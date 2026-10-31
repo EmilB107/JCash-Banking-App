@@ -3,9 +3,13 @@ package com.jcash.app.transactions;
 import com.jcash.app.accounts.AccountService;
 import com.jcash.app.common.FreshTestDatabaseConfiguration;
 import com.jcash.app.transactions.dto.TransactionEntryResponse;
+import com.jcash.app.transactions.dto.TransactionHistoryPage;
 import com.jcash.app.transfers.TransferService;
 import com.jcash.app.transfers.dto.TransferRequest;
 import com.jcash.app.users.UserService;
+import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +52,9 @@ class TransactionHistoryIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
     @BeforeEach
     void setUp() {
         jdbcTemplate.update("DELETE FROM transfer_idempotency_keys");
@@ -86,6 +93,55 @@ class TransactionHistoryIntegrationTest {
 
         assertThat(counterpartyEmailOf(aliceTransfer.id())).isEqualTo(BOB);
         assertThat(counterpartyEmailOf(bobTransfer.id())).isEqualTo(ALICE);
+    }
+
+    @Test
+    void historyIsPagedNewestFirstWithoutOverlap() {
+        for (int i = 1; i <= 5; i++) {
+            accountService.cashIn(ALICE, new BigDecimal(i + ".00"));
+        }
+
+        TransactionHistoryPage first =
+                transactionHistoryService.findAuthenticatedUserHistory(ALICE, 0, 2);
+        TransactionHistoryPage second =
+                transactionHistoryService.findAuthenticatedUserHistory(ALICE, 1, 2);
+        TransactionHistoryPage last =
+                transactionHistoryService.findAuthenticatedUserHistory(ALICE, 2, 2);
+
+        assertThat(first.totalElements()).isEqualTo(5);
+        assertThat(first.totalPages()).isEqualTo(3);
+        assertThat(first.content()).extracting(TransactionEntryResponse::balanceAfter)
+                .usingElementComparator(BigDecimal::compareTo)
+                .containsExactly(new BigDecimal("15.00"), new BigDecimal("10.00"));
+        assertThat(second.content()).extracting(TransactionEntryResponse::balanceAfter)
+                .usingElementComparator(BigDecimal::compareTo)
+                .containsExactly(new BigDecimal("6.00"), new BigDecimal("3.00"));
+        assertThat(last.content()).extracting(TransactionEntryResponse::balanceAfter)
+                .usingElementComparator(BigDecimal::compareTo)
+                .containsExactly(new BigDecimal("1.00"));
+    }
+
+    @Test
+    void historyPageUsesAFixedNumberOfQueries() {
+        accountService.cashIn(ALICE, new BigDecimal("100.00"));
+        for (int i = 1; i <= 5; i++) {
+            transfer(ALICE, "key-" + i, BOB_MOBILE, "1.00");
+        }
+        Statistics statistics = entityManagerFactory
+                .unwrap(SessionFactory.class)
+                .getStatistics();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
+        try {
+            transactionHistoryService.findAuthenticatedUserHistory(ALICE, 0, 5);
+
+            // Account id lookup, the page of entries, and the total count;
+            // the Account entity is never loaded because the response only
+            // needs its id.
+            assertThat(statistics.getPrepareStatementCount()).isEqualTo(3);
+        } finally {
+            statistics.setStatisticsEnabled(false);
+        }
     }
 
     @Test
@@ -154,7 +210,9 @@ class TransactionHistoryIntegrationTest {
     }
 
     private List<TransactionEntryResponse> historyOf(String email) {
-        return transactionHistoryService.findAuthenticatedUserHistory(email);
+        return transactionHistoryService
+                .findAuthenticatedUserHistory(email, 0, 100)
+                .content();
     }
 
     private void insertEntry(

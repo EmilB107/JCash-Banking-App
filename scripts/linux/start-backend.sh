@@ -6,11 +6,11 @@ ENV_FILE="$ROOT_DIR/.env"
 BACKEND_DIR="$ROOT_DIR/backend"
 
 if [[ ! -f "$ENV_FILE" ]]; then
-  echo "Missing $ENV_FILE. Copy .env.example to .env and set DB_PASSWORD." >&2
+  echo "Missing $ENV_FILE. Copy .env.example to .env and set DB_PASSWORD, ACTUATOR_USERNAME, and ACTUATOR_PASSWORD." >&2
   exit 1
 fi
 if [[ ! -s "$ENV_FILE" ]]; then
-  echo "$ENV_FILE is empty; set DB_PASSWORD before starting the backend." >&2
+  echo "$ENV_FILE is empty; set DB_PASSWORD, ACTUATOR_USERNAME, and ACTUATOR_PASSWORD before starting the backend." >&2
   exit 1
 fi
 
@@ -19,10 +19,12 @@ set -a
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 set +a
-if [[ -z "${DB_PASSWORD:-}" ]]; then
-  echo "DB_PASSWORD is missing or empty in $ENV_FILE." >&2
-  exit 1
-fi
+for required in DB_PASSWORD ACTUATOR_USERNAME ACTUATOR_PASSWORD; do
+  if [[ -z "${!required:-}" ]]; then
+    echo "$required is missing or empty in $ENV_FILE." >&2
+    exit 1
+  fi
+done
 if [[ ! -x "$BACKEND_DIR/mvnw" ]]; then
   echo "Maven Wrapper is missing or not executable: $BACKEND_DIR/mvnw" >&2
   echo "Run: chmod +x backend/mvnw" >&2

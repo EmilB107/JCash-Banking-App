@@ -3,6 +3,7 @@ package com.jcash.app.common;
 import com.jcash.app.accounts.exception.AccountNotFoundException;
 import com.jcash.app.accounts.exception.InvalidCashInAmountException;
 import com.jcash.app.security.LoginService;
+import com.jcash.app.transactions.exception.InvalidPageRequestException;
 import com.jcash.app.transfers.exception.IdempotencyKeyConflictException;
 import com.jcash.app.transfers.exception.IdempotencyKeyInProgressException;
 import com.jcash.app.transfers.exception.InsufficientFundsException;
@@ -75,6 +76,12 @@ public class RestExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError handleInvalidTransferAmount(InvalidTransferAmountException exception) {
         return new ApiError("INVALID_TRANSFER_AMOUNT", exception.getMessage());
+    }
+
+    @ExceptionHandler(InvalidPageRequestException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleInvalidPageRequest(InvalidPageRequestException exception) {
+        return new ApiError("INVALID_PAGE_REQUEST", exception.getMessage());
     }
 
     @ExceptionHandler(InvalidIdempotencyKeyException.class)

@@ -48,7 +48,7 @@ JCash-Banking-App/
 - [Development roadmap](docs/dev-roadmap.md)
 
 ## Local development
-Set up PostgreSQL first, copy `.env.example` to `.env`, and set the local PostgreSQL password in `DB_PASSWORD`. On Linux Mint, the complete stack can then be started with:
+Set up PostgreSQL first, copy `.env.example` to `.env`, set the local PostgreSQL password in `DB_PASSWORD`, and set `ACTUATOR_USERNAME` and `ACTUATOR_PASSWORD` for the metrics operator account (see [Backend setup](docs/backend-setup.md#actuator-operator-account)). On Linux Mint, the complete stack can then be started with:
 ```bash
 ./scripts/linux/start-all.sh
 ```

@@ -1,15 +1,21 @@
 package com.jcash.app.transactions;
 
 import com.jcash.app.accounts.Account;
-import com.jcash.app.transactions.dto.TransactionEntryResponse;
+import com.jcash.app.accounts.AccountRepository;
+import com.jcash.app.transactions.dto.TransactionHistoryPage;
+import com.jcash.app.transactions.exception.InvalidPageRequestException;
 import com.jcash.app.users.User;
-import com.jcash.app.users.UserRepository;
 import com.jcash.app.users.exception.UserNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -21,6 +27,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,7 +37,7 @@ class TransactionHistoryServiceTest {
     private TransactionEntryRepository transactionEntryRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private AccountRepository accountRepository;
 
     @Mock
     private User user;
@@ -41,13 +48,12 @@ class TransactionHistoryServiceTest {
     void setUp() {
         transactionHistoryService = new TransactionHistoryService(
                 transactionEntryRepository,
-                userRepository
+                accountRepository
         );
     }
 
     @Test
     void returnsOnlyEntriesForTheAuthenticatedUserAsDtos() {
-        UUID userId = UUID.randomUUID();
         UUID accountId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
         Account account = new Account(user);
@@ -67,19 +73,26 @@ class TransactionHistoryServiceTest {
                 "createdAt",
                 Instant.parse("2025-01-01T00:00:00Z")
         );
-        when(userRepository.findByEmail("demo@example.com"))
-                .thenReturn(Optional.of(user));
-        when(user.getId()).thenReturn(userId);
+        when(accountRepository.findIdByUserEmail("demo@example.com"))
+                .thenReturn(Optional.of(accountId));
+        PageRequest pageRequest = PageRequest.of(1, 5, Sort.by(
+                Sort.Order.desc("createdAt"),
+                Sort.Order.desc("id")
+        ));
         when(transactionEntryRepository
-                .findByAccountUserIdOrderByCreatedAtDesc(userId))
-                .thenReturn(List.of(entry));
+                .findByAccountId(accountId, pageRequest))
+                .thenReturn(new PageImpl<>(List.of(entry), pageRequest, 6));
 
-        List<TransactionEntryResponse> result =
+        TransactionHistoryPage result =
                 transactionHistoryService.findAuthenticatedUserHistory(
-                        "demo@example.com"
+                        "demo@example.com", 1, 5
                 );
 
-        assertThat(result).singleElement().satisfies(response -> {
+        assertThat(result.page()).isEqualTo(1);
+        assertThat(result.size()).isEqualTo(5);
+        assertThat(result.totalElements()).isEqualTo(6);
+        assertThat(result.totalPages()).isEqualTo(2);
+        assertThat(result.content()).singleElement().satisfies(response -> {
             assertThat(response.id()).isEqualTo(entryId);
             assertThat(response.account()).isEqualTo(accountId);
             assertThat(response.transactionType())
@@ -94,17 +107,28 @@ class TransactionHistoryServiceTest {
             assertThat(response.transferReference()).isNull();
         });
         verify(transactionEntryRepository)
-                .findByAccountUserIdOrderByCreatedAtDesc(userId);
+                .findByAccountId(accountId, pageRequest);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"-1, 20", "0, 0", "0, 101"})
+    void rejectsInvalidPageOrSize(int page, int size) {
+        assertThatThrownBy(() ->
+                transactionHistoryService.findAuthenticatedUserHistory(
+                        "demo@example.com", page, size
+                )
+        ).isInstanceOf(InvalidPageRequestException.class);
+        verifyNoInteractions(accountRepository, transactionEntryRepository);
     }
 
     @Test
     void reportsMissingAuthenticatedUser() {
-        when(userRepository.findByEmail("missing@example.com"))
+        when(accountRepository.findIdByUserEmail("missing@example.com"))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
                 transactionHistoryService.findAuthenticatedUserHistory(
-                        "missing@example.com"
+                        "missing@example.com", 0, 20
                 )
         )
                 .isInstanceOf(UserNotFoundException.class)

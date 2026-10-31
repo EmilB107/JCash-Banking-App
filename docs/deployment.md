@@ -13,6 +13,7 @@ This is a target architecture, not a claim that deployment is already configured
 - Configure the frontend API base URL for the deployed backend.
 - Configure the backend datasource with Supabase connection details and secrets stored in hosting environment variables.
 - Configure CORS to allow only the intended frontend origin.
+- Set `ACTUATOR_USERNAME` and a long random `ACTUATOR_PASSWORD` in the hosting environment variables; `/actuator/health` stays public, and metrics need that account.
 - Use HTTPS for public traffic.
 - Apply Flyway migrations through a controlled deployment process.
 - Confirm authentication, authorization, ownership checks, and transfer integrity before making the demo public.

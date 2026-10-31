@@ -23,13 +23,45 @@ java --version
 Use the Maven Wrapper in the repository. Confirm `backend/mvnw` and `backend/pom.xml` exist before running the commands below. The POM currently sets `<java.version>21</java.version>`, so Java 21 is the intended runtime. Check the exact runtime with `java --version`.
 
 ## Configure database access
-The local database guide defines the database and role. The backend reads the database password from the `DB_PASSWORD` environment variable. In the terminal that will run Spring Boot:
+The local database guide defines the database and role. The backend reads three environment variables and won't start without all of them:
+
+| Variable | Purpose |
+|---|---|
+| `DB_PASSWORD` | Password of the `jcash_banking_user` PostgreSQL role |
+| `ACTUATOR_USERNAME` | Username of the operator account for `/actuator/metrics` (any name, for example `ops`) |
+| `ACTUATOR_PASSWORD` | Password of that operator account |
+
+The usual place for them is the root `.env` file (copied from `.env.example`), which the start scripts and the test command load. To set them only in the terminal that will run Spring Boot instead:
 ```bash
 read -s -p "Enter PostgreSQL password: " DB_PASSWORD
 echo
-export DB_PASSWORD
+read -s -p "Choose an Actuator password: " ACTUATOR_PASSWORD
+echo
+export DB_PASSWORD ACTUATOR_PASSWORD ACTUATOR_USERNAME=ops
 ```
-The password is hidden while typing. Repeat in each new terminal session. Never commit passwords or other secrets.
+The passwords are hidden while typing. Repeat in each new terminal session. Never commit passwords or other secrets.
+
+### Actuator operator account
+This account is only for reading server metrics; it isn't an app user and isn't stored in the database. Pick any username and a long random password, then put both in `.env`:
+```text
+ACTUATOR_USERNAME=ops
+ACTUATOR_PASSWORD=paste-a-generated-password-here
+```
+To generate a password:
+```bash
+# Linux / macOS
+openssl rand -base64 24
+```
+```powershell
+# Windows PowerShell
+[Convert]::ToBase64String((1..24 | ForEach-Object { Get-Random -Maximum 256 }))
+```
+Restart the backend after changing either value. To use the account, open `http://localhost:8080/actuator/metrics` in a browser and enter the username and password when prompted, or run:
+```bash
+set -a; . ./.env; set +a
+curl -u "$ACTUATOR_USERNAME:$ACTUATOR_PASSWORD" http://localhost:8080/actuator/metrics
+```
+When deploying, set the same two variables in the host's environment settings, with a different password from your local one.
 
 The `spring.application.name` property identifies the Spring application for configuration and logging; it does not affect the database connection. The project uses `jcash-banking` as its application identifier. The remaining settings match this example:
 ```properties
@@ -54,7 +86,7 @@ Alternatively, from `backend/`:
 ```bash
 ./mvnw spring-boot:run
 ```
-The server commonly uses `http://localhost:8080`. Confirm startup from the logs. Only test a health URL after confirming that the endpoint is implemented. Stop with `Ctrl+C`.
+The server commonly uses `http://localhost:8080`. Confirm startup from the logs. `GET /api/health` and `GET /actuator/health` are public. `/actuator/metrics` needs the operator account from `ACTUATOR_USERNAME` and `ACTUATOR_PASSWORD` in `.env`, sent with HTTP Basic (see [performance tuning](performance-tuning.md)). Stop with `Ctrl+C`.
 
 ## Optional convenience script
 The repository includes optional convenience scripts. From the repository root, use the platform-specific script:
@@ -68,7 +100,7 @@ The repository includes optional convenience scripts. From the repository root, 
 # Windows PowerShell
 .\scripts\windows\start-backend.ps1
 ```
-The script loads the root `.env`, validates `DB_PASSWORD` without printing it, and starts the Maven Wrapper from `backend/`. It does not create or alter databases. Database connection and Flyway errors remain in the Spring Boot output.
+The script loads the root `.env`, checks that `DB_PASSWORD`, `ACTUATOR_USERNAME`, and `ACTUATOR_PASSWORD` are set without printing them, and starts the Maven Wrapper from `backend/`. It does not create or alter databases. Database connection and Flyway errors remain in the Spring Boot output.
 
 ## Dependencies and scripts currently declared
 
@@ -84,7 +116,7 @@ The current authentication flow uses server-side HTTP sessions:
 4. `GET /api/users/me` to retrieve the authenticated user's profile (`id`, `email`, `mobileNumber`, `displayName`, `createdAt`).
 5. `GET /api/accounts/me` to retrieve the authenticated user's PHP account summary.
 6. `POST /api/accounts/me/cash-in` to increase that account balance with a positive `BigDecimal` amount and record a CREDIT/CASH_IN transaction entry in the same transaction.
-7. `GET /api/transactions/me` to retrieve the authenticated user's transaction history as DTOs, ordered newest first. Each entry has a server-generated `details` description (`Cash in`, `Transfer to <name> (<mobile>)`, or `Transfer from <name> (<mobile>)`) and, for transfers, a `transferReference` shared by the sender's DEBIT and the recipient's CREDIT entry.
+7. `GET /api/transactions/me?page=0&size=20` to retrieve one page of the authenticated user's transaction history, ordered newest first. `page` is zero-based (default 0) and `size` is 1–100 (default 20); anything else returns HTTP 400 `INVALID_PAGE_REQUEST`. The response is `{content, page, size, totalElements, totalPages}`, where `content` holds the entries. Each entry has a server-generated `details` description (`Cash in`, `Transfer to <name> (<mobile>)`, or `Transfer from <name> (<mobile>)`) and, for transfers, a `transferReference` shared by the sender's DEBIT and the recipient's CREDIT entry.
 8. `POST /api/transfers` to transfer a positive amount to another user's account.
 9. `POST /api/auth/logout` to invalidate the session.
 
@@ -114,4 +146,4 @@ With the backend running, Swagger UI is at `http://localhost:8080/swagger-ui/ind
 - See [database setup](database-setup.md) for PostgreSQL service and role commands.
 
 ## Running tests
-The full suite needs PostgreSQL running, `DB_PASSWORD` exported, and a separate `jcash_banking_test_db` database for the integration tests, whose schema is wiped on every run. See [testing](testing.md#test-database) for the one-time setup command and the non-database fallback.
+The full suite needs PostgreSQL running, `DB_PASSWORD`, `ACTUATOR_USERNAME`, and `ACTUATOR_PASSWORD` exported, and a separate `jcash_banking_test_db` database for the integration tests, whose schema is wiped on every run. See [testing](testing.md#test-database) for the one-time setup command and the non-database fallback.
