@@ -118,7 +118,7 @@ The current authentication flow uses server-side HTTP sessions:
 6. `POST /api/accounts/me/cash-in` to increase that account balance with a positive `BigDecimal` amount and record a CREDIT/CASH_IN transaction entry in the same transaction.
 7. `GET /api/transactions/me?page=0&size=20` to retrieve one page of the authenticated user's transaction history, ordered newest first. `page` is zero-based (default 0) and `size` is 1–100 (default 20); anything else returns HTTP 400 `INVALID_PAGE_REQUEST`. The response is `{content, page, size, totalElements, totalPages}`, where `content` holds the entries. Each entry has a server-generated `details` description (`Cash in`, `Transfer to <name> (<mobile>)`, or `Transfer from <name> (<mobile>)`) and, for transfers, a `transferReference` shared by the sender's DEBIT and the recipient's CREDIT entry.
 8. `POST /api/transfers` to transfer a positive amount to another user's account.
-9. `POST /api/auth/logout` to invalidate the session.
+9. `POST /api/auth/logout` to invalidate the session. It returns HTTP 204 (no redirect).
 
 State-changing requests must include the CSRF token in the `X-XSRF-TOKEN` header. Either form is accepted: the masked `token` returned by `GET /api/auth/csrf`, or the raw `XSRF-TOKEN` cookie value (what Swagger UI and Angular send). The `JSESSIONID` cookie identifies the server-side session and should remain inaccessible to client-side JavaScript.
 

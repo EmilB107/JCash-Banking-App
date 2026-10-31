@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -107,6 +108,13 @@ class AuthControllerMvcTest {
                 .andExpect(status().isForbidden());
 
         verifyNoInteractions(loginService);
+    }
+
+    @Test
+    void logoutReturns204InsteadOfRedirecting() throws Exception {
+        mockMvc.perform(post("/api/auth/logout").with(csrf()))
+                .andExpect(status().isNoContent())
+                .andExpect(header().doesNotExist("Location"));
     }
 
     private static MockHttpServletRequestBuilder login(String body) {
