@@ -43,4 +43,11 @@ Other declared scripts are `npm run build`, `npm run watch`, and `npm test`. The
 The development server commonly uses `http://localhost:4200`. Use the address printed by the CLI if it selects another port. Stop it with `Ctrl+C`.
 
 ## API connection
-Configure the frontend API base URL for the environment being used. During local development it will normally point to the local Spring Boot server (commonly port `8080`). Configure backend CORS for the frontend origin. Confirm the actual environment files and API URL in the repository rather than assuming a specific file or endpoint exists.
+The frontend calls the API with relative `/api/...` URLs. During local development, `ng serve` proxies `/api` to the Spring Boot server at `http://localhost:8080` (see `frontend/proxy.conf.json`), so the browser sees a single origin: session and CSRF cookies work without CORS configuration. Start the backend before using features that call the API.
+
+The API plumbing lives in `frontend/src/app/core/`:
+
+- `http/csrf.interceptor.ts` adds the `X-XSRF-TOKEN` header to state-changing `/api/` requests. It reads the `XSRF-TOKEN` cookie and, when the cookie is missing (first visit, or after logout), fetches one from `GET /api/auth/csrf`. Angular's built-in XSRF support is disabled because it never fetches a missing token.
+- `auth/auth.service.ts` holds the signed-in user as a signal (`undefined` = not yet checked, `null` = signed out) and exposes `login`, `logout`, and `loadCurrentUser`. The session is restored from `GET /api/users/me` when the app starts.
+- `auth/session-expired.interceptor.ts` clears the signed-in state when any API call other than login returns 401.
+- `http/api-error.ts` converts HTTP failures to the backend's `{error, message}` shape, including network failures (`NETWORK_ERROR`).
