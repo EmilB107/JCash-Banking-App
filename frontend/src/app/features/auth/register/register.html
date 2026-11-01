@@ -1,0 +1,93 @@
+<app-auth-layout heading="Create your account">
+  <form class="mt-6 space-y-4" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (error(); as message) {
+      <div class="alert-error" role="alert">{{ message }}</div>
+    }
+
+    <div>
+      <label class="form-label" for="displayName">Name</label>
+      <input
+        id="displayName"
+        class="form-input"
+        type="text"
+        autocomplete="name"
+        formControlName="displayName"
+        [attr.aria-invalid]="!!errorFor('displayName')"
+      />
+      @if (errorFor('displayName'); as message) {
+        <p class="form-error">{{ message }}</p>
+      }
+    </div>
+
+    <div>
+      <label class="form-label" for="email">Email</label>
+      <input
+        id="email"
+        class="form-input"
+        type="email"
+        autocomplete="email"
+        formControlName="email"
+        [attr.aria-invalid]="!!errorFor('email')"
+      />
+      @if (errorFor('email'); as message) {
+        <p class="form-error">{{ message }}</p>
+      }
+    </div>
+
+    <div>
+      <label class="form-label" for="mobileNumber">Mobile number</label>
+      <input
+        id="mobileNumber"
+        class="form-input"
+        type="tel"
+        autocomplete="tel"
+        placeholder="09171234567"
+        formControlName="mobileNumber"
+        [attr.aria-invalid]="!!errorFor('mobileNumber')"
+      />
+      @if (errorFor('mobileNumber'); as message) {
+        <p class="form-error">{{ message }}</p>
+      }
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="form-label" for="pin">6-digit PIN</label>
+        <input
+          id="pin"
+          class="form-input tracking-widest"
+          type="password"
+          inputmode="numeric"
+          maxlength="6"
+          autocomplete="new-password"
+          formControlName="pin"
+          [attr.aria-invalid]="!!errorFor('pin')"
+        />
+      </div>
+      <div>
+        <label class="form-label" for="confirmPin">Confirm PIN</label>
+        <input
+          id="confirmPin"
+          class="form-input tracking-widest"
+          type="password"
+          inputmode="numeric"
+          maxlength="6"
+          autocomplete="new-password"
+          formControlName="confirmPin"
+          [attr.aria-invalid]="!!errorFor('confirmPin')"
+        />
+      </div>
+    </div>
+    @if (errorFor('pin') ?? errorFor('confirmPin'); as message) {
+      <p class="form-error -mt-2">{{ message }}</p>
+    }
+
+    <button class="btn-primary" type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Creating account…' : 'Create account' }}
+    </button>
+  </form>
+
+  <p class="mt-6 text-center text-sm text-ink-600">
+    Already have an account? <a class="link" routerLink="/login">Log in</a>
+  </p>
+</app-auth-layout>

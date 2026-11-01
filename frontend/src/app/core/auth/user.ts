@@ -6,3 +6,11 @@ export interface User {
   displayName: string;
   createdAt: string;
 }
+
+/** Body of POST /api/users (com.jcash.app.users.dto.CreateUserRequest). */
+export interface RegisterRequest {
+  email: string;
+  mobileNumber: string;
+  displayName: string;
+  pin: string;
+}

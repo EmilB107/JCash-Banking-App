@@ -49,7 +49,10 @@ describe('AuthService', () => {
     auth.loadCurrentUser().subscribe((user) => (result = user));
     backend
       .expectOne('/api/users/me')
-      .flush({ error: 'UNAUTHORIZED', message: 'Login required' }, { status: 401, statusText: 'Unauthorized' });
+      .flush(
+        { error: 'UNAUTHORIZED', message: 'Login required' },
+        { status: 401, statusText: 'Unauthorized' },
+      );
 
     expect(result).toBeNull();
     expect(auth.currentUser()).toBeNull();
@@ -80,6 +83,27 @@ describe('AuthService', () => {
     expect(auth.currentUser()).toBeUndefined();
   });
 
+  it('registers, then logs in with the same credentials', () => {
+    auth
+      .register({
+        email: USER.email,
+        mobileNumber: USER.mobileNumber,
+        displayName: USER.displayName,
+        pin: '123456',
+      })
+      .subscribe();
+
+    backend
+      .expectOne({ method: 'POST', url: '/api/users' })
+      .flush(USER, { status: 201, statusText: 'Created' });
+    const login = backend.expectOne('/api/auth/login');
+    expect(login.request.body).toEqual({ identifier: USER.email, pin: '123456' });
+    login.flush({ message: 'Login successful' });
+    backend.expectOne('/api/users/me').flush(USER);
+
+    expect(auth.currentUser()).toEqual(USER);
+  });
+
   it('clears the session on logout, even if the request fails', () => {
     auth.loadCurrentUser().subscribe();
     backend.expectOne('/api/users/me').flush(USER);
@@ -94,7 +118,9 @@ describe('AuthService', () => {
     auth.loadCurrentUser().subscribe();
     backend.expectOne('/api/users/me').flush(USER);
 
-    TestBed.inject(HttpClient).get('/api/accounts/me').subscribe({ error: () => undefined });
+    TestBed.inject(HttpClient)
+      .get('/api/accounts/me')
+      .subscribe({ error: () => undefined });
     backend.expectOne('/api/accounts/me').flush(null, { status: 401, statusText: 'Unauthorized' });
 
     expect(auth.currentUser()).toBeNull();

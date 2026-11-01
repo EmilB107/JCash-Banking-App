@@ -11,11 +11,7 @@ export const sessionExpiredInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   return next(req).pipe(
     catchError((err: unknown) => {
-      if (
-        err instanceof HttpErrorResponse &&
-        err.status === 401 &&
-        req.url !== '/api/auth/login'
-      ) {
+      if (err instanceof HttpErrorResponse && err.status === 401 && req.url !== '/api/auth/login') {
         auth.clearSession();
       }
       return throwError(() => err);

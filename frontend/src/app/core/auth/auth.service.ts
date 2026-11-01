@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, map, of, switchMap, tap, throwError } from 'rxjs';
-import { User } from './user';
+import { RegisterRequest, User } from './user';
 
 /**
  * Holds the signed-in user for the server-side session.
@@ -33,6 +33,13 @@ export class AuthService {
       switchMap(() => this.fetchMe()),
       tap((user) => this.user.set(user)),
     );
+  }
+
+  /** Creates the user (and their PHP account), then logs them in. */
+  register(request: RegisterRequest): Observable<User> {
+    return this.http
+      .post<User>('/api/users', request)
+      .pipe(switchMap(() => this.login(request.email, request.pin)));
   }
 
   /** Local state is cleared even if the request fails. */
