@@ -79,12 +79,13 @@
     @apply rounded-lg bg-danger-50 p-3 text-sm text-danger-700 ring-1 ring-danger-200;
   }
 
+  /* Buttons size to their content; add w-full where a button should fill its container. */
   .btn-primary {
-    @apply w-full rounded-lg bg-brand-700 px-4 py-2.5 font-semibold text-white shadow-xs hover:bg-brand-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center rounded-lg bg-brand-700 px-4 py-2.5 font-semibold text-white shadow-xs hover:bg-brand-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-secondary {
-    @apply rounded-lg bg-white px-3 py-2 text-sm font-medium text-ink-700 ring-1 ring-ink-300 hover:bg-ink-100;
+    @apply inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 font-medium text-ink-700 shadow-xs ring-1 ring-ink-300 hover:bg-ink-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500;
   }
 
   .link {

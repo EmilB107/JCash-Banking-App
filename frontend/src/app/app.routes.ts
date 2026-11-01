@@ -3,7 +3,13 @@ import { authGuard, guestGuard } from './core/auth/auth.guards';
 
 // loadComponent lazy-loads each page: its code is downloaded only when first visited.
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+  // No guard: the landing page is open to everyone (signed-in users see "Go to dashboard").
+  {
+    path: '',
+    pathMatch: 'full',
+    title: 'JCash · Simulated e-wallet',
+    loadComponent: () => import('./features/landing/landing').then((m) => m.Landing),
+  },
   {
     path: 'login',
     title: 'Log in · JCash',
@@ -22,5 +28,5 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
   },
-  { path: '**', redirectTo: 'dashboard' },
+  { path: '**', redirectTo: '' },
 ];
