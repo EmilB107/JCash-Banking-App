@@ -1,1 +1,63 @@
 @import 'tailwindcss';
+
+/*
+ * JCash color theme. Use only these colors in templates (bg-brand-600,
+ * text-ink-700, ...). Tailwind's default palette is removed below, so a class
+ * like bg-blue-500 simply does nothing: that keeps every page on-theme.
+ *
+ * Contrast notes (WCAG AA needs 4.5:1 for normal text):
+ * - brand-500 is the signature orange. Use it for the logo, accents and focus
+ *   rings, but NOT behind white text (only 2.5:1).
+ * - White text needs brand-700 or darker (4.5:1+), e.g. primary buttons.
+ * - Body text: ink-900. Secondary text: ink-600. ink-500 passes on white only.
+ */
+@theme {
+  --color-*: initial;
+
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Brand: built around Flush Orange #FF8000 (500). */
+  --color-brand-50: #fff5eb;
+  --color-brand-100: #ffe8d1;
+  --color-brand-200: #ffcf9e;
+  --color-brand-300: #ffb366;
+  --color-brand-400: #ff9933;
+  --color-brand-500: #ff8000;
+  --color-brand-600: #e66f00;
+  --color-brand-700: #c25700;
+  --color-brand-800: #9a4500;
+  --color-brand-900: #7a3800;
+  --color-brand-950: #421d00;
+
+  /* Ink: warm grays built around Masala #4B4948 (700). Text, borders, backgrounds. */
+  --color-ink-50: #f7f7f6;
+  --color-ink-100: #efeeed;
+  --color-ink-200: #dedcdb;
+  --color-ink-300: #c4c2c0;
+  --color-ink-400: #9c9997;
+  --color-ink-500: #75726f;
+  --color-ink-600: #5e5b59;
+  --color-ink-700: #4b4948;
+  --color-ink-800: #363433;
+  --color-ink-900: #252322;
+  --color-ink-950: #161514;
+
+  /* Status colors: errors, and money coming in (credits). */
+  --color-danger-50: #fef2f2;
+  --color-danger-200: #fecaca;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+
+  --color-success-50: #f0fdf4;
+  --color-success-200: #bbf7d0;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+}
+
+@layer base {
+  body {
+    @apply bg-ink-50 text-ink-900 antialiased;
+  }
+}
