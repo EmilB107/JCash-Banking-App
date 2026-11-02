@@ -1,0 +1,63 @@
+<!-- On desktop the page is exactly one screen tall: the header stays put and
+     the sidebar and main area scroll on their own. -->
+<div class="md:flex md:h-screen md:flex-col">
+  <header class="shrink-0 border-b border-ink-200 bg-white">
+    <nav class="flex items-center justify-between gap-4 px-4 py-4 sm:px-6">
+      <a class="text-2xl font-bold tracking-tight text-brand-500" routerLink="/">JCash</a>
+      <button class="btn-secondary px-3 py-2 text-sm" type="button" (click)="logout()">
+        Log out
+      </button>
+    </nav>
+  </header>
+
+  <div class="md:flex md:min-h-0 md:flex-1">
+    <aside
+      class="flex flex-col gap-4 border-b border-ink-200 bg-white px-4 py-4 md:w-64 md:shrink-0 md:gap-6 md:overflow-y-auto md:border-r md:border-b-0 md:px-5 md:py-6"
+    >
+      <div class="min-w-0">
+        <p class="text-sm text-ink-600">Hi,</p>
+        <!-- truncate adds "…" if the name is too long; the title shows it in full on hover. -->
+        <p
+          class="truncate text-lg font-semibold text-ink-950"
+          [title]="auth.currentUser()?.displayName ?? ''"
+        >
+          {{ auth.currentUser()?.displayName }}
+        </p>
+      </div>
+
+      <nav aria-label="Main">
+        <ul class="flex gap-2 overflow-x-auto md:flex-col">
+          @for (item of nav; track item.label) {
+            <li>
+              @if (item.path) {
+                <a
+                  class="nav-link"
+                  [routerLink]="item.path"
+                  routerLinkActive="nav-link-active"
+                  ariaCurrentWhenActive="page"
+                >
+                  <svg class="shrink-0" [lucideIcon]="item.icon" size="20"></svg>
+                  {{ item.label }}
+                </a>
+              } @else {
+                <span
+                  class="nav-link cursor-default text-ink-400 hover:bg-transparent"
+                  aria-disabled="true"
+                >
+                  <svg class="shrink-0" [lucideIcon]="item.icon" size="20"></svg>
+                  {{ item.label }}
+                </span>
+              }
+            </li>
+          }
+        </ul>
+      </nav>
+    </aside>
+
+    <main class="min-w-0 flex-1 px-4 py-6 sm:px-6 md:overflow-y-auto md:py-8">
+      <div class="mx-auto max-w-4xl">
+        <router-outlet />
+      </div>
+    </main>
+  </div>
+</div>

@@ -1,0 +1,93 @@
+<div class="mx-auto max-w-lg">
+  <h1 class="text-2xl font-semibold text-ink-950">Send money</h1>
+  <p class="mt-1 text-sm text-ink-600">Transfer to another JCash user by email or mobile number.</p>
+  <p class="mt-4 flex items-center gap-1 text-sm text-ink-600">
+    Available balance:
+    <span class="font-semibold text-ink-900" data-testid="balance">
+      @if (visibility.hidden()) {
+        {{ masked }}
+      } @else if (balance() !== null) {
+        <!-- Compare with null: a 0.00 balance is falsy but still a real balance. -->
+        {{ balance() | currency: 'PHP' : 'symbol-narrow' }}
+      } @else {
+        —
+      }
+    </span>
+    <app-balance-toggle class="text-ink-500" />
+  </p>
+
+  <section class="card mt-6 p-6">
+    @if (step() === 'form') {
+      <form class="space-y-4" [formGroup]="form" (ngSubmit)="review()" novalidate>
+        @if (error(); as message) {
+          <div class="alert-error" role="alert">{{ message }}</div>
+        }
+        @if (lastSent(); as result) {
+          <div class="alert-success" role="status">
+            Sent {{ result.amount | currency: result.currency : 'symbol-narrow' }} to
+            {{ result.recipientEmail }}.
+          </div>
+        }
+
+        <div>
+          <label class="form-label" for="send-recipient">Recipient</label>
+          <input
+            id="send-recipient"
+            class="form-input"
+            type="text"
+            autocomplete="off"
+            placeholder="name@example.com or 0917 123 4567"
+            formControlName="recipient"
+            appMobileFormat
+            [attr.aria-invalid]="!!recipientError()"
+          />
+          @if (recipientError(); as message) {
+            <p class="form-error">{{ message }}</p>
+          }
+        </div>
+
+        <div>
+          <label class="form-label" for="send-amount">Amount (₱)</label>
+          <input
+            id="send-amount"
+            class="form-input"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="0.00"
+            formControlName="amount"
+            [attr.aria-invalid]="!!amountError()"
+          />
+          @if (amountError(); as message) {
+            <p class="form-error">{{ message }}</p>
+          }
+        </div>
+
+        <button class="btn-primary w-full" type="submit">Review transfer</button>
+      </form>
+    } @else {
+      <div class="space-y-4">
+        <dl class="divide-y divide-ink-100 rounded-lg bg-ink-50 ring-1 ring-ink-200">
+          <div class="flex justify-between gap-4 px-4 py-3 text-sm">
+            <dt class="text-ink-600">To</dt>
+            <dd class="truncate font-medium text-ink-900">{{ recipient() }}</dd>
+          </div>
+          <div class="flex justify-between gap-4 px-4 py-3 text-sm">
+            <dt class="text-ink-600">Amount</dt>
+            <dd class="font-semibold text-ink-900">
+              {{ amount() | currency: 'PHP' : 'symbol-narrow' }}
+            </dd>
+          </div>
+        </dl>
+        <div class="grid grid-cols-2 gap-3">
+          <button class="btn-secondary" type="button" [disabled]="sending()" (click)="edit()">
+            Edit
+          </button>
+          <button class="btn-primary" type="button" [disabled]="sending()" (click)="confirm()">
+            {{ sending() ? 'Sending…' : 'Send' }}
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+</div>

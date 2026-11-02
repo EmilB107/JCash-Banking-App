@@ -1,0 +1,83 @@
+<h1 class="sr-only">Dashboard</h1>
+
+@if (loadError(); as message) {
+  <div class="alert-error mb-6 flex flex-wrap items-center justify-between gap-3" role="alert">
+    <span>{{ message }}</span>
+    <button class="btn-secondary px-3 py-1.5 text-sm" type="button" (click)="load()">
+      Try again
+    </button>
+  </div>
+}
+
+<div class="space-y-6">
+  <section
+    class="rounded-2xl bg-ink-900 p-6 text-white shadow-lg sm:p-8"
+    aria-labelledby="balance-heading"
+  >
+    <div class="flex items-center justify-between gap-4">
+      <p id="balance-heading" class="text-sm text-ink-300">Available balance</p>
+      <app-balance-toggle class="text-ink-300" />
+    </div>
+    @if (visibility.hidden()) {
+      <p class="mt-1 text-4xl font-semibold tracking-tight" data-testid="balance">
+        {{ masked }}
+      </p>
+    } @else if (account(); as acct) {
+      <p class="mt-1 text-4xl font-semibold tracking-tight" data-testid="balance">
+        {{ acct.balance | currency: acct.currency : 'symbol-narrow' }}
+      </p>
+    } @else {
+      <p class="mt-1 text-4xl font-semibold tracking-tight text-ink-400">—</p>
+    }
+    <div class="mt-6 h-1 w-12 rounded-full bg-brand-500"></div>
+  </section>
+
+  <div class="grid grid-cols-2 gap-4">
+    <a class="btn-primary py-4" routerLink="/cash-in">Cash in</a>
+    <a class="btn-secondary py-4" routerLink="/send">Send money</a>
+  </div>
+
+  <section class="card" aria-labelledby="activity-heading">
+    <h2 id="activity-heading" class="px-6 pt-6 text-lg font-semibold text-ink-950">
+      Recent activity
+    </h2>
+
+    @if (recent().length) {
+      <ul class="mt-4 divide-y divide-ink-100">
+        @for (entry of recent(); track entry.id) {
+          <li class="flex items-center justify-between gap-4 px-6 py-4">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium text-ink-900">{{ entry.details }}</p>
+              <p class="text-xs text-ink-600">{{ entry.createdAt | date: 'MMM d, y, h:mm a' }}</p>
+            </div>
+            <div class="shrink-0 text-right">
+              @if (entry.direction === 'CREDIT') {
+                <p class="text-sm font-semibold text-success-700">
+                  +{{ entry.amount | currency: entry.currency : 'symbol-narrow' }}
+                </p>
+              } @else {
+                <p class="text-sm font-semibold text-ink-900">
+                  −{{ entry.amount | currency: entry.currency : 'symbol-narrow' }}
+                </p>
+              }
+              <p class="text-xs text-ink-600">
+                Balance
+                {{
+                  visibility.hidden()
+                    ? masked
+                    : (entry.balanceAfter | currency: entry.currency : 'symbol-narrow')
+                }}
+              </p>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else if (account()) {
+      <p class="px-6 pt-2 pb-6 text-sm text-ink-600">
+        No transactions yet. Cash in to add your first funds.
+      </p>
+    } @else {
+      <p class="px-6 pt-2 pb-6 text-sm text-ink-600">Loading…</p>
+    }
+  </section>
+</div>

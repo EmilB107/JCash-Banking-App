@@ -79,6 +79,24 @@
     @apply rounded-lg bg-danger-50 p-3 text-sm text-danger-700 ring-1 ring-danger-200;
   }
 
+  .alert-success {
+    @apply rounded-lg bg-success-50 p-3 text-sm text-success-700 ring-1 ring-success-200;
+  }
+
+  /* White panel used for dashboard sections. */
+  .card {
+    @apply rounded-2xl bg-white shadow-sm ring-1 ring-ink-200;
+  }
+
+  /* Sidebar links; routerLinkActive adds .nav-link-active to the current page. */
+  .nav-link {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium whitespace-nowrap text-ink-700 hover:bg-ink-100;
+  }
+
+  .nav-link-active {
+    @apply bg-brand-50 text-brand-800 hover:bg-brand-50;
+  }
+
   /* Buttons size to their content; add w-full where a button should fill its container. */
   .btn-primary {
     @apply inline-flex items-center justify-center rounded-lg bg-brand-700 px-4 py-2.5 font-semibold text-white shadow-xs hover:bg-brand-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-60;

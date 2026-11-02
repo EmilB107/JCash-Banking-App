@@ -1,26 +1,51 @@
-import { Component, inject } from '@angular/core';
-import { AuthService } from '../../core/auth/auth.service';
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
+import { Account } from '../../core/account/account';
+import { AccountService } from '../../core/account/account.service';
+import { BalanceToggle } from '../../core/account/balance-toggle';
+import {
+  BalanceVisibilityService,
+  MASKED_AMOUNT,
+} from '../../core/account/balance-visibility.service';
+import { toApiError } from '../../core/http/api-error';
+import { TransactionEntry } from '../../core/transactions/transaction';
+import { TransactionService } from '../../core/transactions/transaction.service';
 
-/** Placeholder until step 3 (balance, cash-in, recent activity). */
+const RECENT_COUNT = 5;
+
 @Component({
   selector: 'app-dashboard',
-  template: `
-    <main class="mx-auto max-w-2xl px-4 py-10">
-      <div class="flex items-center justify-between gap-4">
-        <h1 class="text-2xl font-semibold">Hi, {{ auth.currentUser()?.displayName }}</h1>
-        <button class="btn-secondary px-3 py-2 text-sm" type="button" (click)="logout()">
-          Log out
-        </button>
-      </div>
-      <p class="mt-4 text-ink-600">Your balance and recent activity will appear here.</p>
-    </main>
-  `,
+  imports: [CurrencyPipe, DatePipe, RouterLink, BalanceToggle],
+  templateUrl: './dashboard.html',
 })
 export class Dashboard {
-  protected readonly auth = inject(AuthService);
+  private readonly accounts = inject(AccountService);
+  private readonly transactions = inject(TransactionService);
 
-  // Navigation to /login happens in App once the user becomes signed out.
-  protected logout(): void {
-    this.auth.logout().subscribe({ error: () => undefined });
+  protected readonly visibility = inject(BalanceVisibilityService);
+  protected readonly masked = MASKED_AMOUNT;
+  protected readonly account = signal<Account | null>(null);
+  protected readonly recent = signal<TransactionEntry[]>([]);
+  protected readonly loadError = signal<string | null>(null);
+
+  constructor() {
+    this.load();
+  }
+
+  /** Loads the balance and recent activity together; also used by the "Try again" button. */
+  protected load(): void {
+    this.loadError.set(null);
+    forkJoin({
+      account: this.accounts.getMyAccount(),
+      history: this.transactions.getMyHistory(0, RECENT_COUNT),
+    }).subscribe({
+      next: ({ account, history }) => {
+        this.account.set(account);
+        this.recent.set(history.content);
+      },
+      error: (err: unknown) => this.loadError.set(toApiError(err).message),
+    });
   }
 }

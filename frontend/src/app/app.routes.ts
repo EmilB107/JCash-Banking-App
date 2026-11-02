@@ -22,11 +22,28 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./features/auth/register/register').then((m) => m.Register),
   },
+  // Signed-in pages share the Shell layout (sidebar); each child renders in its <router-outlet>.
   {
-    path: 'dashboard',
-    title: 'Dashboard · JCash',
+    path: '',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+    loadComponent: () => import('./features/shell/shell').then((m) => m.Shell),
+    children: [
+      {
+        path: 'dashboard',
+        title: 'Dashboard · JCash',
+        loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+      },
+      {
+        path: 'cash-in',
+        title: 'Cash in · JCash',
+        loadComponent: () => import('./features/cash-in/cash-in').then((m) => m.CashIn),
+      },
+      {
+        path: 'send',
+        title: 'Send money · JCash',
+        loadComponent: () => import('./features/send-money/send-money').then((m) => m.SendMoney),
+      },
+    ],
   },
   { path: '**', redirectTo: '' },
 ];

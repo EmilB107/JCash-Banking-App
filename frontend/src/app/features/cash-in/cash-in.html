@@ -1,0 +1,63 @@
+<div class="mx-auto max-w-lg">
+  <h1 class="text-2xl font-semibold text-ink-950">Cash in</h1>
+  <p class="mt-1 text-sm text-ink-600">Add demo funds. No real money is involved.</p>
+  <p class="mt-4 flex items-center gap-1 text-sm text-ink-600">
+    Available balance:
+    <span class="font-semibold text-ink-900" data-testid="balance">
+      @if (visibility.hidden()) {
+        {{ masked }}
+      } @else if (account(); as acct) {
+        {{ acct.balance | currency: acct.currency : 'symbol-narrow' }}
+      } @else {
+        —
+      }
+    </span>
+    <app-balance-toggle class="text-ink-500" />
+  </p>
+
+  <section class="card mt-6 p-6">
+    <form class="space-y-4" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (error(); as message) {
+        <div class="alert-error" role="alert">{{ message }}</div>
+      }
+      @if (added(); as amount) {
+        <div class="alert-success" role="status">
+          Added {{ amount | currency: 'PHP' : 'symbol-narrow' }} to your wallet.
+        </div>
+      }
+
+      <div>
+        <label class="form-label" for="cash-in-amount">Amount (₱)</label>
+        <input
+          id="cash-in-amount"
+          class="form-input"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          placeholder="0.00"
+          formControlName="amount"
+          [attr.aria-invalid]="!!amountError()"
+        />
+        @if (amountError(); as message) {
+          <p class="form-error">{{ message }}</p>
+        }
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        @for (quick of quickAmounts; track quick) {
+          <button
+            class="btn-secondary px-3 py-1.5 text-sm"
+            type="button"
+            (click)="setAmount(quick)"
+          >
+            {{ quick | currency: 'PHP' : 'symbol-narrow' : '1.0-0' }}
+          </button>
+        }
+      </div>
+
+      <button class="btn-primary w-full" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Adding funds…' : 'Cash in' }}
+      </button>
+    </form>
+  </section>
+</div>
