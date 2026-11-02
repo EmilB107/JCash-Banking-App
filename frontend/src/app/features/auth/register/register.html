@@ -41,8 +41,9 @@
         class="form-input"
         type="tel"
         autocomplete="tel"
-        placeholder="09171234567"
+        placeholder="0917 123 4567"
         formControlName="mobileNumber"
+        appMobileFormat
         [attr.aria-invalid]="!!errorFor('mobileNumber')"
       />
       @if (errorFor('mobileNumber'); as message) {

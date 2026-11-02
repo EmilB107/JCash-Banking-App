@@ -54,6 +54,19 @@ describe('Login', () => {
     expect(navigate).toHaveBeenCalledWith('/dashboard');
   });
 
+  it('formats a mobile number identifier and sends it without spaces', () => {
+    login.mockReturnValue(of({} as User));
+    const { el, type, submit } = setup();
+    vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+
+    type('identifier', '09171234567');
+    expect(el.querySelector<HTMLInputElement>('#identifier')!.value).toBe('0917 123 4567');
+    type('pin', '123456');
+    submit();
+
+    expect(login).toHaveBeenCalledWith('09171234567', '123456');
+  });
+
   it("shows the backend's message and clears the PIN on failure", () => {
     login.mockReturnValue(
       throwError(

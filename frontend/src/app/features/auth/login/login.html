@@ -11,7 +11,9 @@
         class="form-input"
         type="text"
         autocomplete="username"
+        placeholder="you@example.com or 0917 123 4567"
         formControlName="identifier"
+        appMobileFormat
         [attr.aria-invalid]="invalid('identifier')"
       />
       @if (invalid('identifier')) {

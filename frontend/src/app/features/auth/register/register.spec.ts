@@ -46,8 +46,22 @@ describe('Register', () => {
     submit();
 
     expect(register).not.toHaveBeenCalled();
-    expect(el.textContent).toContain('Use 09XXXXXXXXX or +639XXXXXXXXX.');
+    expect(el.textContent).toContain('Use 0917 123 4567 or +63 917 123 4567.');
     expect(el.textContent).toContain("PINs don't match.");
+  });
+
+  it('shows the mobile number with spaces but sends it without', () => {
+    register.mockReturnValue(of({} as User));
+    const { el, type, fillValid, submit } = setup();
+    vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    fillValid();
+    type('mobileNumber', '+639171234567');
+
+    expect(el.querySelector<HTMLInputElement>('#mobileNumber')!.value).toBe('+63 917 123 4567');
+    submit();
+    expect(register).toHaveBeenCalledWith(
+      expect.objectContaining({ mobileNumber: '+639171234567' }),
+    );
   });
 
   it('rejects an email without a dot in the domain', () => {

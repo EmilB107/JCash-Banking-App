@@ -9,17 +9,25 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
+import { MobileFormatDirective } from '../../../core/forms/mobile-format.directive';
+import { MOBILE_PATTERN, stripSpaces } from '../../../core/forms/mobile-number';
 import { toApiError } from '../../../core/http/api-error';
 import { AuthLayout } from '../auth-layout';
 
 // Same rules as the backend's CreateUserRequest, so most mistakes are caught
 // before a request is sent. The backend still validates everything.
-const MOBILE_PATTERN = /^(09\d{9}|\+639\d{9})$/;
 const PIN_PATTERN = /^\d{6}$/;
 // Validators.email alone accepts "a@b"; this also requires a dot in the domain.
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 type Field = 'email' | 'mobileNumber' | 'displayName' | 'pin' | 'confirmPin';
+
+// The field shows "0917 123 4567", so check the number with the spaces removed.
+function mobileNumber(control: AbstractControl<string>): ValidationErrors | null {
+  return !control.value || MOBILE_PATTERN.test(stripSpaces(control.value))
+    ? null
+    : { mobileNumber: true };
+}
 
 function pinsMatch(group: AbstractControl): ValidationErrors | null {
   return group.get('pin')?.value === group.get('confirmPin')?.value ? null : { pinMismatch: true };
@@ -27,7 +35,7 @@ function pinsMatch(group: AbstractControl): ValidationErrors | null {
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink, AuthLayout],
+  imports: [ReactiveFormsModule, RouterLink, AuthLayout, MobileFormatDirective],
   templateUrl: './register.html',
 })
 export class Register {
@@ -37,7 +45,7 @@ export class Register {
   protected readonly form = inject(NonNullableFormBuilder).group(
     {
       email: ['', [Validators.required, Validators.email, Validators.pattern(EMAIL_PATTERN)]],
-      mobileNumber: ['', [Validators.required, Validators.pattern(MOBILE_PATTERN)]],
+      mobileNumber: ['', [Validators.required, mobileNumber]],
       displayName: ['', [Validators.required, Validators.maxLength(100)]],
       pin: ['', [Validators.required, Validators.pattern(PIN_PATTERN)]],
       confirmPin: ['', Validators.required],
@@ -59,7 +67,7 @@ export class Register {
     this.auth
       .register({
         email: email.trim(),
-        mobileNumber: mobileNumber.trim(),
+        mobileNumber: stripSpaces(mobileNumber),
         displayName: displayName.trim(),
         pin,
       })
@@ -89,7 +97,7 @@ export class Register {
       case 'email':
         return errors['required'] ? 'Enter your email.' : 'Enter a valid email address.';
       case 'mobileNumber':
-        return 'Use 09XXXXXXXXX or +639XXXXXXXXX.';
+        return 'Use 0917 123 4567 or +63 917 123 4567.';
       case 'displayName':
         return errors['required'] ? 'Enter your name.' : 'Use at most 100 characters.';
       case 'pin':

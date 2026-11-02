@@ -3,12 +3,14 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
+import { MobileFormatDirective } from '../../../core/forms/mobile-format.directive';
+import { looksLikeMobile, stripSpaces } from '../../../core/forms/mobile-number';
 import { toApiError } from '../../../core/http/api-error';
 import { AuthLayout } from '../auth-layout';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, AuthLayout],
+  imports: [ReactiveFormsModule, RouterLink, AuthLayout, MobileFormatDirective],
   templateUrl: './login.html',
 })
 export class Login {
@@ -31,8 +33,10 @@ export class Login {
     this.error.set(null);
 
     const { identifier, pin } = this.form.getRawValue();
+    // A mobile number is shown as "0917 123 4567"; the backend expects no spaces.
+    const id = looksLikeMobile(identifier) ? stripSpaces(identifier) : identifier.trim();
     this.auth
-      .login(identifier.trim(), pin)
+      .login(id, pin)
       .pipe(finalize(() => this.submitting.set(false)))
       .subscribe({
         next: () => void this.router.navigateByUrl('/dashboard'),
