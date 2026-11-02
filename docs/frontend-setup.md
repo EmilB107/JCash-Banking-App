@@ -39,7 +39,9 @@ The repository includes optional convenience scripts. From the repository root, 
 .\scripts\windows\start-frontend.ps1
 ```
 The script checks that the locked frontend dependencies are installed, then runs the existing `npm start` script (`ng serve`). It does not require the backend to be running.
-Other declared scripts are `npm run build`, `npm run watch`, and `npm test`. The test script runs `ng test`; verify the generated Angular test configuration before relying on it.
+Other declared scripts are `npm run build`, `npm run watch`, and `npm test`. The test script runs `ng test` (Vitest with jsdom); `npx ng test --watch=false` runs the suite once.
+
+`ng test` loads `vitest-base.config.mts` (enabled by `runnerConfig` in `angular.json`), which replaces `@lucide/angular` with `testing/lucide-angular.stub.ts` during tests only. The real package compiles all of its ~1,600 icon components on import under the test runner, which made each spec that renders an icon ~15 s slower. When the app starts using a new Lucide icon, add a matching one-line stub there; the production build always uses the real package.
 The development server commonly uses `http://localhost:4200`. Use the address printed by the CLI if it selects another port. Stop it with `Ctrl+C`.
 
 ## API connection
