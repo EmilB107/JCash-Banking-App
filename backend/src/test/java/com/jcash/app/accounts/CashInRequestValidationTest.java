@@ -22,11 +22,14 @@ class CashInRequestValidationTest {
     }
 
     @Test
-    void rejectsNullZeroAndNegativeAmounts() {
+    void rejectsMissingNonPositiveTooLargeAndOverPreciseAmounts() {
         for (BigDecimal amount : new BigDecimal[] {
                 null,
                 BigDecimal.ZERO,
-                new BigDecimal("-0.01")
+                new BigDecimal("-0.01"),
+                new BigDecimal("100000.01"),
+                new BigDecimal("1000000"),
+                new BigDecimal("10.555")
         }) {
             Set<ConstraintViolation<CashInRequest>> violations =
                     validator.validate(new CashInRequest(amount));
@@ -36,10 +39,12 @@ class CashInRequestValidationTest {
     }
 
     @Test
-    void acceptsPositiveBigDecimalAmount() {
-        Set<ConstraintViolation<CashInRequest>> violations =
-                validator.validate(new CashInRequest(new BigDecimal("10.00")));
+    void acceptsPositiveAmountsUpToTheLimit() {
+        for (String amount : new String[] {"0.01", "10.00", "10.5", "100000.00"}) {
+            Set<ConstraintViolation<CashInRequest>> violations =
+                    validator.validate(new CashInRequest(new BigDecimal(amount)));
 
-        assertThat(violations).isEmpty();
+            assertThat(violations).as("amount %s", amount).isEmpty();
+        }
     }
 }

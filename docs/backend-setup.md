@@ -115,7 +115,7 @@ The current authentication flow uses server-side HTTP sessions:
 3. `POST /api/auth/login` with `identifier` (email or mobile number) and `pin` to authenticate and establish the session.
 4. `GET /api/users/me` to retrieve the authenticated user's profile (`id`, `email`, `mobileNumber`, `displayName`, `createdAt`).
 5. `GET /api/accounts/me` to retrieve the authenticated user's PHP account summary.
-6. `POST /api/accounts/me/cash-in` to increase that account balance with a positive `BigDecimal` amount and record a CREDIT/CASH_IN transaction entry in the same transaction.
+6. `POST /api/accounts/me/cash-in` to increase that account balance with a positive `BigDecimal` amount (at most 100,000.00 per request, with no more than 2 decimal places; anything else returns HTTP 400 `VALIDATION_FAILED`) and record a CREDIT/CASH_IN transaction entry in the same transaction.
 7. `GET /api/transactions/me?page=0&size=20` to retrieve one page of the authenticated user's transaction history, ordered newest first. `page` is zero-based (default 0) and `size` is 1–100 (default 20); anything else returns HTTP 400 `INVALID_PAGE_REQUEST`. The response is `{content, page, size, totalElements, totalPages}`, where `content` holds the entries. Each entry has a server-generated `details` description (`Cash in`, `Transfer to <name> (<mobile>)`, or `Transfer from <name> (<mobile>)`) and, for transfers, a `transferReference` shared by the sender's DEBIT and the recipient's CREDIT entry.
 8. `POST /api/transfers` to transfer a positive amount to another user's account.
 9. `POST /api/auth/logout` to invalidate the session. It returns HTTP 204 (no redirect).
