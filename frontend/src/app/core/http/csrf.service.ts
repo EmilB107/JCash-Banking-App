@@ -3,7 +3,7 @@ import { HttpBackend, HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, finalize, map, of, shareReplay } from 'rxjs';
 
-export const CSRF_COOKIE_NAME = 'XSRF-TOKEN';
+const CSRF_COOKIE_NAME = 'XSRF-TOKEN';
 export const CSRF_HEADER_NAME = 'X-XSRF-TOKEN';
 
 interface CsrfResponse {

@@ -13,7 +13,7 @@ import { amountErrorMessage, amountValidators } from '../../core/forms/amount';
 import { toApiError } from '../../core/http/api-error';
 
 // Same per-request limit as the backend's CashInRequest.
-export const MAX_CASH_IN = 100_000;
+const MAX_CASH_IN = 100_000;
 
 @Component({
   selector: 'app-cash-in',

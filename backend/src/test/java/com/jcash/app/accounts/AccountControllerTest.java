@@ -30,7 +30,6 @@ class AccountControllerTest {
         Instant now = Instant.parse("2025-01-01T00:00:00Z");
         User user = new User("demo@example.com", "09171234567", "Demo User", "hashed");
         Account account = new Account(user);
-        account.setUser(user);
 
         org.springframework.test.util.ReflectionTestUtils.setField(account, "id", accountId);
         org.springframework.test.util.ReflectionTestUtils.setField(account, "balance", new BigDecimal("250.00"));

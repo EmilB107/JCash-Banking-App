@@ -3,8 +3,8 @@
  *
  * The real package defines ~1,600 icon components that Angular compiles at
  * import time under the test runner, adding ~15 s to every spec that touches
- * an icon. These empty <svg> components accept the same inputs, so templates
- * render the same way without drawing anything.
+ * an icon. These empty <svg> components accept the inputs the app sets, so
+ * templates render the same way without drawing anything.
  *
  * Using a new icon in the app? Export a stub for it here too, or the specs
  * that render it fail with "is not a known element/property".
@@ -13,7 +13,7 @@ import { Component } from '@angular/core';
 
 export type LucideIcon = unknown;
 
-const inputs = ['size', 'strokeWidth', 'color', 'title'];
+const inputs = ['size'];
 
 // Vitest doesn't compile decorator syntax in this file, so `@Component({...})`
 // is written as a plain call: Component({...})(class {}) does the same thing.
