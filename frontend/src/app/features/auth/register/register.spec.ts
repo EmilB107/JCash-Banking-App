@@ -50,6 +50,16 @@ describe('Register', () => {
     expect(el.textContent).toContain("PINs don't match.");
   });
 
+  it('rejects an email without a dot in the domain', () => {
+    const { el, type, fillValid, submit } = setup();
+    fillValid();
+    type('email', 'demo@example');
+    submit();
+
+    expect(register).not.toHaveBeenCalled();
+    expect(el.textContent).toContain('Enter a valid email address.');
+  });
+
   it('registers with trimmed values and goes to the dashboard', () => {
     register.mockReturnValue(of({} as User));
     const { fillValid, submit } = setup();

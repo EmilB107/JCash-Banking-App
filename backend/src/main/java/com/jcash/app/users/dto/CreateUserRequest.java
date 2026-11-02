@@ -6,8 +6,9 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record CreateUserRequest(
+        // @Email alone accepts "a@b"; the regexp also requires a dot in the domain.
         @NotBlank
-        @Email
+        @Email(regexp = "[^@\\s]+@[^@\\s]+\\.[^@\\s]+")
         String email,
 
         @NotBlank

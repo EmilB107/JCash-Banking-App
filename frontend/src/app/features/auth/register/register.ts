@@ -16,6 +16,8 @@ import { AuthLayout } from '../auth-layout';
 // before a request is sent. The backend still validates everything.
 const MOBILE_PATTERN = /^(09\d{9}|\+639\d{9})$/;
 const PIN_PATTERN = /^\d{6}$/;
+// Validators.email alone accepts "a@b"; this also requires a dot in the domain.
+const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 type Field = 'email' | 'mobileNumber' | 'displayName' | 'pin' | 'confirmPin';
 
@@ -34,7 +36,7 @@ export class Register {
 
   protected readonly form = inject(NonNullableFormBuilder).group(
     {
-      email: ['', [Validators.required, Validators.email]],
+      email: ['', [Validators.required, Validators.email, Validators.pattern(EMAIL_PATTERN)]],
       mobileNumber: ['', [Validators.required, Validators.pattern(MOBILE_PATTERN)]],
       displayName: ['', [Validators.required, Validators.maxLength(100)]],
       pin: ['', [Validators.required, Validators.pattern(PIN_PATTERN)]],

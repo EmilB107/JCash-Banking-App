@@ -21,6 +21,31 @@ class CreateUserRequestValidationTest {
     }
 
     @Test
+    void acceptsWellFormedEmails() {
+        for (String email : new String[] {"demo@example.com", "juan.dela-cruz+jcash@mail.example.ph"}) {
+            assertThat(validateEmail(email)).as("email %s", email).isEmpty();
+        }
+    }
+
+    @Test
+    void rejectsMissingOrMalformedEmails() {
+        for (String email : new String[] {
+                null,
+                "",
+                "demo",
+                "demo@",
+                "@example.com",
+                "demo@example",
+                "demo@@example.com",
+                "demo @example.com"
+        }) {
+            assertThat(validateEmail(email))
+                    .as("email %s", email)
+                    .isNotEmpty();
+        }
+    }
+
+    @Test
     void acceptsLocalAndInternationalMobileNumbers() {
         for (String mobileNumber : new String[] {"09171234567", "+639171234567"}) {
             assertThat(validate(mobileNumber, "123456")).isEmpty();
@@ -62,6 +87,10 @@ class CreateUserRequestValidationTest {
                     .as("pin %s", pin)
                     .isNotEmpty();
         }
+    }
+
+    private static Set<ConstraintViolation<CreateUserRequest>> validateEmail(String email) {
+        return validator.validate(new CreateUserRequest(email, "09171234567", "Demo User", "123456"));
     }
 
     private static Set<ConstraintViolation<CreateUserRequest>> validate(
