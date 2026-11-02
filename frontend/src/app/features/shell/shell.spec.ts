@@ -28,12 +28,12 @@ describe('Shell', () => {
     const links = [...el.querySelectorAll('nav[aria-label=Main] a')].map((a) =>
       a.getAttribute('href'),
     );
-    expect(links).toEqual(['/dashboard', '/cash-in', '/send']);
+    expect(links).toEqual(['/dashboard', '/cash-in', '/send', '/history']);
 
     const disabled = [...el.querySelectorAll('[aria-disabled=true]')].map((s) =>
       s.textContent!.trim(),
     );
-    expect(disabled).toEqual(['Transaction history', 'Profile']);
+    expect(disabled).toEqual(['Profile']);
   });
 
   describe('mobile menu', () => {

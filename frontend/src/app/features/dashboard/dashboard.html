@@ -38,38 +38,17 @@
   </div>
 
   <section class="card" aria-labelledby="activity-heading">
-    <h2 id="activity-heading" class="px-6 pt-6 text-lg font-semibold text-ink-950">
-      Recent activity
-    </h2>
+    <div class="flex items-center justify-between gap-4 px-6 pt-6">
+      <h2 id="activity-heading" class="text-lg font-semibold text-ink-950">Recent activity</h2>
+      @if (recent().length) {
+        <a class="link text-sm" routerLink="/history">View all</a>
+      }
+    </div>
 
     @if (recent().length) {
       <ul class="mt-4 divide-y divide-ink-100">
         @for (entry of recent(); track entry.id) {
-          <li class="flex items-center justify-between gap-4 px-6 py-4">
-            <div class="min-w-0">
-              <p class="truncate text-sm font-medium text-ink-900">{{ entry.details }}</p>
-              <p class="text-xs text-ink-600">{{ entry.createdAt | date: 'MMM d, y, h:mm a' }}</p>
-            </div>
-            <div class="shrink-0 text-right">
-              @if (entry.direction === 'CREDIT') {
-                <p class="text-sm font-semibold text-success-700">
-                  +{{ entry.amount | currency: entry.currency : 'symbol-narrow' }}
-                </p>
-              } @else {
-                <p class="text-sm font-semibold text-ink-900">
-                  −{{ entry.amount | currency: entry.currency : 'symbol-narrow' }}
-                </p>
-              }
-              <p class="text-xs text-ink-600">
-                Balance
-                {{
-                  visibility.hidden()
-                    ? masked
-                    : (entry.balanceAfter | currency: entry.currency : 'symbol-narrow')
-                }}
-              </p>
-            </div>
-          </li>
+          <li class="px-6 py-4"><app-transaction-summary [entry]="entry" /></li>
         }
       </ul>
     } @else if (account()) {

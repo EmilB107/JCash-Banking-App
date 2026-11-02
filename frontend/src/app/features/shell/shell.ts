@@ -65,7 +65,7 @@ export class Shell {
     },
     {
       label: 'Transaction history',
-      path: null,
+      path: '/history',
       icon: LucideClock,
     },
     {

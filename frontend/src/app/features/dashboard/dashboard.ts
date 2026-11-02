@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -11,13 +11,14 @@ import {
 } from '../../core/account/balance-visibility.service';
 import { toApiError } from '../../core/http/api-error';
 import { TransactionEntry } from '../../core/transactions/transaction';
+import { TransactionSummary } from '../../core/transactions/transaction-summary';
 import { TransactionService } from '../../core/transactions/transaction.service';
 
 const RECENT_COUNT = 5;
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CurrencyPipe, DatePipe, RouterLink, BalanceToggle],
+  imports: [CurrencyPipe, RouterLink, BalanceToggle, TransactionSummary],
   templateUrl: './dashboard.html',
 })
 export class Dashboard {

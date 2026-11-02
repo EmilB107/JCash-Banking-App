@@ -43,6 +43,11 @@ export const routes: Routes = [
         title: 'Send money · JCash',
         loadComponent: () => import('./features/send-money/send-money').then((m) => m.SendMoney),
       },
+      {
+        path: 'history',
+        title: 'Transaction history · JCash',
+        loadComponent: () => import('./features/history/history').then((m) => m.History),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

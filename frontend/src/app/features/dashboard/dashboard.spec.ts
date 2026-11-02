@@ -83,6 +83,7 @@ describe('Dashboard', () => {
     expect(el.textContent).toContain('Transfer to Juan');
     expect(el.textContent).toContain('−₱200.00');
     expect(el.textContent).toContain('+₱1,500.00');
+    expect(el.querySelector('a[href="/history"]')!.textContent).toContain('View all');
   });
 
   it('shows an empty state for a new wallet', () => {

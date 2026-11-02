@@ -1,0 +1,133 @@
+<h1 class="text-2xl font-semibold text-ink-950">Transaction history</h1>
+<p class="mt-1 text-sm text-ink-600">Every cash-in and transfer on your account.</p>
+
+<section class="card mt-6" aria-labelledby="history-heading">
+  <h2 id="history-heading" class="sr-only">Transactions</h2>
+
+  @let s = state();
+  @if (s.status === 'loading') {
+    <p class="p-6 text-sm text-ink-600">Loading…</p>
+  } @else if (s.status === 'error') {
+    <div class="p-6">
+      <div class="alert-error flex flex-wrap items-center justify-between gap-3" role="alert">
+        <span>{{ s.message }}</span>
+        <button class="btn-secondary px-3 py-1.5 text-sm" type="button" (click)="retry()">
+          Try again
+        </button>
+      </div>
+    </div>
+  } @else {
+    @if (s.history.content.length) {
+      <ul class="divide-y divide-ink-100">
+        @for (entry of s.history.content; track entry.id) {
+          <li>
+            <button
+              class="w-full px-6 py-4 text-left hover:bg-ink-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500"
+              type="button"
+              [attr.aria-expanded]="expanded() === entry.id"
+              [attr.aria-controls]="'details-' + entry.id"
+              (click)="toggle(entry.id)"
+            >
+              <app-transaction-summary [entry]="entry" />
+            </button>
+
+            @if (expanded() === entry.id) {
+              <dl
+                [id]="'details-' + entry.id"
+                class="mx-6 mb-4 grid gap-x-6 gap-y-3 rounded-lg bg-ink-50 p-4 text-sm ring-1 ring-ink-200 sm:grid-cols-2"
+              >
+                <div>
+                  <dt class="text-ink-600">Type</dt>
+                  <dd class="font-medium text-ink-900">
+                    {{ entry.transactionType === 'CASH_IN' ? 'Cash in' : 'Transfer' }}
+                    ·
+                    {{ entry.direction === 'CREDIT' ? 'Money in' : 'Money out' }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-ink-600">Date and time</dt>
+                  <dd class="font-medium text-ink-900">
+                    {{ entry.createdAt | date: 'MMMM d, y, h:mm:ss a' }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-ink-600">Amount</dt>
+                  <dd class="font-medium text-ink-900">
+                    {{ entry.amount | currency: entry.currency : 'symbol-narrow' }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-ink-600">Balance after</dt>
+                  <dd class="font-medium text-ink-900">
+                    {{
+                      visibility.hidden()
+                        ? masked
+                        : (entry.balanceAfter | currency: entry.currency : 'symbol-narrow')
+                    }}
+                  </dd>
+                </div>
+                <div class="sm:col-span-2">
+                  <dt class="text-ink-600">Transaction ID</dt>
+                  <dd class="font-mono text-xs break-all text-ink-900">{{ entry.id }}</dd>
+                </div>
+                @if (entry.transferReference) {
+                  <div class="sm:col-span-2">
+                    <dt class="text-ink-600">Transfer reference</dt>
+                    <dd class="font-mono text-xs break-all text-ink-900">
+                      {{ entry.transferReference }}
+                    </dd>
+                    <dd class="mt-1 text-xs text-ink-600">
+                      The sender's and the recipient's entries share this reference.
+                    </dd>
+                  </div>
+                }
+              </dl>
+            }
+          </li>
+        }
+      </ul>
+    } @else if (s.history.totalElements === 0) {
+      <p class="p-6 text-sm text-ink-600">
+        No transactions yet. <a class="link" routerLink="/cash-in">Cash in</a> to add your first
+        funds.
+      </p>
+    } @else {
+      <p class="p-6 text-sm text-ink-600">
+        There's nothing on this page.
+        <a class="link" routerLink="/history">Go to the first page</a>
+      </p>
+    }
+
+    @if (s.history.totalPages > 1) {
+      <nav
+        class="flex flex-wrap items-center justify-between gap-3 border-t border-ink-100 px-6 py-4"
+        aria-label="Pagination"
+      >
+        <p class="text-sm text-ink-600">
+          Page {{ pageNumber() }} of {{ s.history.totalPages }} ·
+          {{ s.history.totalElements }} transactions
+        </p>
+        <div class="flex gap-2">
+          @if (pageNumber() > 1) {
+            <a
+              class="btn-secondary px-3 py-1.5 text-sm"
+              routerLink="/history"
+              [queryParams]="pageParams(pageNumber() - 1)"
+            >
+              Previous
+            </a>
+          }
+          @if (pageNumber() < s.history.totalPages) {
+            <a
+              class="btn-secondary px-3 py-1.5 text-sm"
+              routerLink="/history"
+              [queryParams]="pageParams(pageNumber() + 1)"
+            >
+              Next
+            </a>
+          }
+        </div>
+      </nav>
+    }
+  }
+</section>
