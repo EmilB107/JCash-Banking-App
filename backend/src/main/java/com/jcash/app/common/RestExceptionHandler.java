@@ -3,6 +3,7 @@ package com.jcash.app.common;
 import com.jcash.app.accounts.exception.AccountNotFoundException;
 import com.jcash.app.accounts.exception.InvalidCashInAmountException;
 import com.jcash.app.security.LoginService;
+import com.jcash.app.security.exception.IncorrectPinException;
 import com.jcash.app.transactions.exception.InvalidPageRequestException;
 import com.jcash.app.transfers.exception.IdempotencyKeyConflictException;
 import com.jcash.app.transfers.exception.IdempotencyKeyInProgressException;
@@ -15,12 +16,15 @@ import com.jcash.app.users.exception.MobileNumberAlreadyRegisteredException;
 import com.jcash.app.users.exception.UserAlreadyExistsException;
 import com.jcash.app.users.exception.UserNotFoundException;
 import jakarta.persistence.OptimisticLockException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.persistence.PessimisticLockException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -51,13 +55,38 @@ public class RestExceptionHandler {
     @ExceptionHandler(LockedException.class)
     @ResponseStatus(HttpStatus.LOCKED)
     public ApiError handleAccountLocked() {
+        // Login and PIN change share one counter, hence "PIN attempts".
         return new ApiError("ACCOUNT_LOCKED", "Account is locked after "
-                + LoginService.MAX_FAILED_ATTEMPTS + " failed login attempts. Try again in "
+                + LoginService.MAX_FAILED_ATTEMPTS + " failed PIN attempts. Try again in "
                 + LoginService.LOCK_DURATION.toMinutes() + " minutes.");
     }
 
+    // 400, not 401: the session is still valid, and the frontend treats any
+    // 401 as "signed out".
+    @ExceptionHandler(IncorrectPinException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleIncorrectPin(IncorrectPinException exception) {
+        return new ApiError("INCORRECT_PIN", exception.getMessage());
+    }
+
+    /**
+     * UserNotFoundException is only thrown when looking up the signed-in user by
+     * the email stored in their session. If nobody has that email any more, the
+     * user changed it from another session, so this session is stale: end it and
+     * answer 401, which the frontend already treats as "signed out".
+     */
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiError handleStaleSession(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+        SecurityContextHolder.clearContext();
+        return new ApiError("UNAUTHENTICATED", "Your session has ended. Please log in again.");
+    }
+
     @ExceptionHandler({
-            UserNotFoundException.class,
             AccountNotFoundException.class,
             RecipientNotFoundException.class
     })

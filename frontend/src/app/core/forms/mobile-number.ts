@@ -20,6 +20,15 @@ export function stripSpaces(value: string): string {
 }
 
 /**
+ * The form the backend stores (see MobileNumberNormalizer):
+ * "+63 917 123 4567" -> "09171234567". Other shapes only lose their spaces.
+ */
+export function toLocalMobile(value: string): string {
+  const compact = stripSpaces(value);
+  return /^\+639\d{9}$/.test(compact) ? '0' + compact.slice(3) : compact;
+}
+
+/**
  * Longest allowed length without spaces: 11 for "09XXXXXXXXX", 13 for
  * "+639XXXXXXXXX". Other shapes have no limit (they fail validation anyway).
  */

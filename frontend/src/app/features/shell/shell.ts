@@ -25,8 +25,7 @@ import { AuthService } from '../../core/auth/auth.service';
 
 interface NavItem {
   label: string;
-  /** null for pages that don't exist yet; they show greyed out. */
-  path: string | null;
+  path: string;
   /** Lucide icon (https://lucide.dev/icons); drawn in the link's text color. */
   icon: LucideIcon;
 }
@@ -70,7 +69,7 @@ export class Shell {
     },
     {
       label: 'Profile',
-      path: null,
+      path: '/profile',
       icon: LucideUser,
     },
   ];

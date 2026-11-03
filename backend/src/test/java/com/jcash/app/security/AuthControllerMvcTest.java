@@ -81,7 +81,7 @@ class AuthControllerMvcTest {
         mockMvc.perform(login("{\"identifier\":\"demo@example.com\",\"pin\":\"123456\"}"))
                 .andExpect(status().isLocked())
                 .andExpect(jsonPath("$.error").value("ACCOUNT_LOCKED"))
-                .andExpect(jsonPath("$.message").value(containsString("3 failed login attempts")))
+                .andExpect(jsonPath("$.message").value(containsString("3 failed PIN attempts")))
                 .andExpect(jsonPath("$.message").value(containsString("5 minutes")));
     }
 

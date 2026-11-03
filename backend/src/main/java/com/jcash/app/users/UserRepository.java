@@ -16,6 +16,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByMobileNumber(String mobileNumber);
     Optional<User> findByMobileNumber(String mobileNumber);
 
+    // "Taken by someone else": when editing a profile, the user's own email and
+    // mobile number must not count as duplicates.
+    boolean existsByEmailAndIdNot(String email, UUID id);
+    boolean existsByMobileNumberAndIdNot(String mobileNumber, UUID id);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select user from User user where user.email = :email")
     Optional<User> findByEmailForUpdate(@Param("email") String email);

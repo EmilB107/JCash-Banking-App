@@ -48,6 +48,17 @@ export const routes: Routes = [
         title: 'Transaction history · JCash',
         loadComponent: () => import('./features/history/history').then((m) => m.History),
       },
+      {
+        path: 'profile',
+        title: 'Profile · JCash',
+        loadComponent: () => import('./features/profile/profile').then((m) => m.Profile),
+      },
+      {
+        path: 'profile/pin',
+        title: 'Change PIN · JCash',
+        loadComponent: () =>
+          import('./features/profile/change-pin/change-pin').then((m) => m.ChangePin),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

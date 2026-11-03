@@ -15,26 +15,30 @@
         formControlName="identifier"
         appMobileFormat
         [attr.aria-invalid]="invalid('identifier')"
+        [attr.aria-describedby]="invalid('identifier') ? 'identifier-error' : null"
       />
       @if (invalid('identifier')) {
-        <p class="form-error">Enter your email or mobile number.</p>
+        <p id="identifier-error" class="form-error">Enter your email or mobile number.</p>
       }
     </div>
 
     <div>
       <label class="form-label" for="pin">PIN</label>
-      <input
-        id="pin"
-        class="form-input tracking-widest"
-        type="password"
-        inputmode="numeric"
-        maxlength="6"
-        autocomplete="current-password"
-        formControlName="pin"
-        [attr.aria-invalid]="invalid('pin')"
-      />
+      <app-pin-field label="PIN">
+        <input
+          id="pin"
+          class="form-input pr-10 tracking-widest"
+          type="password"
+          inputmode="numeric"
+          maxlength="6"
+          autocomplete="current-password"
+          formControlName="pin"
+          [attr.aria-invalid]="invalid('pin')"
+          [attr.aria-describedby]="invalid('pin') ? 'pin-error' : null"
+        />
+      </app-pin-field>
       @if (invalid('pin')) {
-        <p class="form-error">Enter your 6-digit PIN.</p>
+        <p id="pin-error" class="form-error">Enter your 6-digit PIN.</p>
       }
     </div>
 

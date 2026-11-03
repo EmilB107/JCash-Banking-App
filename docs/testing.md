@@ -62,18 +62,20 @@ The opposite-direction test is timing-dependent: it is strong evidence that lock
 
 ## Registration and login scenarios
 - `MobileNumberNormalizerTest` and `CreateUserRequestValidationTest`: `+639...` normalization, mobile-number format, and exactly-six-digit PINs.
-- `UserServiceTest`: PIN hashing, canonical mobile storage, duplicate email and mobile checks, and translation of concurrent unique-constraint violations.
+- `UserServiceTest`: PIN hashing, canonical mobile storage, duplicate email and mobile checks (on registration and profile updates, where the user's own values are allowed), and translation of concurrent unique-constraint violations.
+- `PinChangeServiceTest` (real BCrypt, fixed `Clock`): the new PIN is stored hashed, a wrong current PIN is counted and keeps the old PIN, the third wrong PIN locks the account, the correct PIN is rejected while locked, and success after an expired lock resets the count.
 - `LoginServiceTest` uses Spring Security's real `DaoAuthenticationProvider` and BCrypt with a fixed `Clock`: email and mobile login, wrong PIN, locking on the third failure, rejection of the correct PIN while locked, automatic unlock after 5 minutes, a fresh count after expiry, reset on success, and unknown identifiers.
-- `AuthControllerMvcTest` and `UserControllerMvcTest`: session creation on login, the `/api/users/me` profile without credential or lockout fields, HTTP 401 `INVALID_CREDENTIALS`, HTTP 423 `ACCOUNT_LOCKED`, HTTP 409 `EMAIL_ALREADY_REGISTERED` / `MOBILE_NUMBER_ALREADY_REGISTERED`, HTTP 400 validation, and HTTP 403 without CSRF.
+- `AuthControllerMvcTest` and `UserControllerMvcTest`: session creation on login, the `/api/users/me` profile without credential or lockout fields, HTTP 401 `INVALID_CREDENTIALS`, HTTP 423 `ACCOUNT_LOCKED`, HTTP 409 `EMAIL_ALREADY_REGISTERED` / `MOBILE_NUMBER_ALREADY_REGISTERED`, HTTP 400 validation, HTTP 403 without CSRF, profile updates (including renaming the session principal after an email change), and PIN changes (HTTP 204, 400 `INCORRECT_PIN`, 423 `ACCOUNT_LOCKED`).
 - `CsrfCookieMvcTest`: the real `XSRF-TOKEN` cookie flow; login succeeds with either the raw cookie value or the masked token from `/api/auth/csrf` in `X-XSRF-TOKEN`, and fails with HTTP 403 without the header. It has its own context and never uses the `csrf()` post-processor, which swaps a test repository into the shared filter chain.
 
 Against PostgreSQL:
 - `UserRegistrationIntegrationTest` forces registration races deterministically: the second insert is confirmed blocked on the unique index (via `pg_locks`) before the first commits, and must fail as a duplicate email or mobile number. It also checks that the database rejects non-canonical mobile numbers.
+- `UserProfileIntegrationTest` covers an email change keeping the same session signed in (and login with the new email and mobile number) while the user's other sessions get HTTP 401 and are ended, 409s for another user's email or mobile number, the changed PIN being required at the next login, and wrong current PINs sharing the login lockout (the counter commits even though the request fails).
 - `ApiDocsIntegrationTest` checks that `/v3/api-docs` and Swagger UI are public and that the description lists the API endpoints.
 - `AuthIntegrationTest` covers HTTP login by email and both mobile formats with an email session principal, lockout and expiry (by moving `locked_until` into the past), reset on success, duplicate mobile numbers, and 10 concurrent wrong-PIN logins producing exactly 2 HTTP 401s, 8 locked responses, and a counter of 3.
 
 ### Test database
-The PostgreSQL integration tests (`TransferIntegrationTest`, `UserRegistrationIntegrationTest`, `AuthIntegrationTest`, `TransactionHistoryIntegrationTest`, `ApiDocsIntegrationTest`) share `FreshTestDatabaseConfiguration` and one cached Spring context. They use a dedicated `jcash_banking_test_db` database owned by `jcash_banking_user`. Create it once:
+The PostgreSQL integration tests (`TransferIntegrationTest`, `UserRegistrationIntegrationTest`, `AuthIntegrationTest`, `UserProfileIntegrationTest`, `TransactionHistoryIntegrationTest`, `ApiDocsIntegrationTest`) share `FreshTestDatabaseConfiguration` and one cached Spring context. They use a dedicated `jcash_banking_test_db` database owned by `jcash_banking_user`. Create it once:
 ```bash
 sudo -u postgres psql -c "CREATE DATABASE jcash_banking_test_db OWNER jcash_banking_user;"
 ```

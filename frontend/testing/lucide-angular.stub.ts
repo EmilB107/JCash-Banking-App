@@ -22,6 +22,7 @@ function icon(selector: string, extraInputs: string[] = []) {
 }
 
 export const LucideDynamicIcon = icon('svg[lucideIcon]', ['lucideIcon']);
+export const LucideArrowLeft = icon('svg[lucideArrowLeft]');
 export const LucideEye = icon('svg[lucideEye]');
 export const LucideEyeOff = icon('svg[lucideEyeOff]');
 export const LucideHouse = icon('svg[lucideHouse]');

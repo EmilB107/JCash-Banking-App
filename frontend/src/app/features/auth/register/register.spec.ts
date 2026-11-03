@@ -1,3 +1,4 @@
+import { ApplicationRef } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
@@ -108,5 +109,21 @@ describe('Register', () => {
     expect(mobile.getAttribute('aria-invalid')).toBe('true');
     expect(mobile.parentElement!.textContent).toContain('Mobile number taken');
     expect(el.querySelector('[role=alert]')).toBeNull();
+  });
+
+  it('shows or hides both PIN fields together from either eye button', () => {
+    const { el, type } = setup();
+    const app = TestBed.inject(ApplicationRef);
+    const types = () =>
+      [...el.querySelectorAll<HTMLInputElement>('#pin, #confirmPin')].map((input) => input.type);
+
+    type('confirmPin', '123456');
+    app.tick();
+    // Only the field with a value has an eye button.
+    expect(el.querySelectorAll('app-pin-field button')).toHaveLength(1);
+
+    el.querySelector<HTMLButtonElement>('[aria-label="Show PINs"]')!.click();
+    app.tick();
+    expect(types()).toEqual(['text', 'text']);
   });
 });

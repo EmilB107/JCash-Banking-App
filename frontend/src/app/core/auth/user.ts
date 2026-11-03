@@ -7,6 +7,13 @@ export interface User {
   createdAt: string;
 }
 
+/** Body of PUT /api/users/me (com.jcash.app.users.dto.UpdateProfileRequest). */
+export interface UpdateProfileRequest {
+  email: string;
+  mobileNumber: string;
+  displayName: string;
+}
+
 /** Body of POST /api/users (com.jcash.app.users.dto.CreateUserRequest). */
 export interface RegisterRequest {
   email: string;

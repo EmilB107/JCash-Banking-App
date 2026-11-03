@@ -72,26 +72,16 @@
         <ul class="flex flex-col gap-2">
           @for (item of nav; track item.label) {
             <li>
-              @if (item.path) {
-                <a
-                  class="nav-link"
-                  [routerLink]="item.path"
-                  routerLinkActive="nav-link-active"
-                  ariaCurrentWhenActive="page"
-                  (click)="closeMenu(false)"
-                >
-                  <svg class="shrink-0" [lucideIcon]="item.icon" size="20"></svg>
-                  {{ item.label }}
-                </a>
-              } @else {
-                <span
-                  class="nav-link cursor-default text-ink-400 hover:bg-transparent"
-                  aria-disabled="true"
-                >
-                  <svg class="shrink-0" [lucideIcon]="item.icon" size="20"></svg>
-                  {{ item.label }}
-                </span>
-              }
+              <a
+                class="nav-link"
+                [routerLink]="item.path"
+                routerLinkActive="nav-link-active"
+                ariaCurrentWhenActive="page"
+                (click)="closeMenu(false)"
+              >
+                <svg class="shrink-0" [lucideIcon]="item.icon" size="20"></svg>
+                {{ item.label }}
+              </a>
             </li>
           }
         </ul>

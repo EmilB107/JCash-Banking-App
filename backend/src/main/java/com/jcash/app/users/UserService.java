@@ -50,21 +50,8 @@ public class UserService {
 
         String pinHash = passwordEncoder.encode(rawPin);
 
-        User user = new User(normalizedEmail, normalizedMobileNumber, displayName, pinHash);
-        try {
-            // Flush so a concurrent registration that passed the exists checks
-            // fails here on a unique constraint, not later at commit.
-            user = userRepository.saveAndFlush(user);
-        } catch (DataIntegrityViolationException exception) {
-            String constraintName = violatedConstraint(exception);
-            if (EMAIL_UNIQUE_CONSTRAINT.equalsIgnoreCase(constraintName)) {
-                throw new UserAlreadyExistsException(normalizedEmail);
-            }
-            if (MOBILE_NUMBER_UNIQUE_CONSTRAINT.equalsIgnoreCase(constraintName)) {
-                throw new MobileNumberAlreadyRegisteredException(normalizedMobileNumber);
-            }
-            throw exception;
-        }
+        User user = saveAndFlush(
+                new User(normalizedEmail, normalizedMobileNumber, displayName, pinHash));
 
         Account account = new Account(user);
         accountRepository.save(account);
@@ -76,6 +63,49 @@ public class UserService {
     public User findAuthenticatedUser(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(email));
+    }
+
+    @Transactional
+    public User updateProfile(
+            String currentEmail,
+            String email,
+            String mobileNumber,
+            String displayName) {
+
+        User user = findAuthenticatedUser(currentEmail);
+
+        String normalizedEmail = EmailNormalizer.normalize(email);
+        String normalizedMobileNumber = MobileNumberNormalizer.normalize(mobileNumber);
+
+        if (userRepository.existsByEmailAndIdNot(normalizedEmail, user.getId())) {
+            throw new UserAlreadyExistsException(normalizedEmail);
+        }
+        if (userRepository.existsByMobileNumberAndIdNot(normalizedMobileNumber, user.getId())) {
+            throw new MobileNumberAlreadyRegisteredException(normalizedMobileNumber);
+        }
+
+        user.updateProfile(normalizedEmail, normalizedMobileNumber, displayName);
+        return saveAndFlush(user);
+    }
+
+    /**
+     * Flushes right away so that, if another request claimed the same email or
+     * mobile number after our exists checks, the unique constraint fails here
+     * (where we can turn it into a 409) instead of later at commit.
+     */
+    private User saveAndFlush(User user) {
+        try {
+            return userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException exception) {
+            String constraintName = violatedConstraint(exception);
+            if (EMAIL_UNIQUE_CONSTRAINT.equalsIgnoreCase(constraintName)) {
+                throw new UserAlreadyExistsException(user.getEmail());
+            }
+            if (MOBILE_NUMBER_UNIQUE_CONSTRAINT.equalsIgnoreCase(constraintName)) {
+                throw new MobileNumberAlreadyRegisteredException(user.getMobileNumber());
+            }
+            throw exception;
+        }
     }
 
     private static String violatedConstraint(DataIntegrityViolationException exception) {

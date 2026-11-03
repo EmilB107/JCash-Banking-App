@@ -1,4 +1,4 @@
-import { formatMobile, looksLikeMobile, stripSpaces } from './mobile-number';
+import { formatMobile, looksLikeMobile, stripSpaces, toLocalMobile } from './mobile-number';
 
 describe('mobile number helpers', () => {
   it('tells mobile numbers apart from emails', () => {
@@ -27,6 +27,12 @@ describe('mobile number helpers', () => {
   it('leaves emails and unknown shapes alone', () => {
     expect(formatMobile('demo@example.com')).toBe('demo@example.com');
     expect(formatMobile('9171234567')).toBe('9171234567');
+  });
+
+  it('converts to the stored 09 form', () => {
+    expect(toLocalMobile('+63 917 123 4567')).toBe('09171234567');
+    expect(toLocalMobile('0917 123 4567')).toBe('09171234567');
+    expect(toLocalMobile('+1 555')).toBe('+1555');
   });
 
   it('strips spaces for sending', () => {

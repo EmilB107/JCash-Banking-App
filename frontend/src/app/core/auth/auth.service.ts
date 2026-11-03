@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, map, of, switchMap, tap, throwError } from 'rxjs';
-import { RegisterRequest, User } from './user';
+import { RegisterRequest, UpdateProfileRequest, User } from './user';
 
 /**
  * Holds the signed-in user for the server-side session.
@@ -40,6 +40,19 @@ export class AuthService {
     return this.http
       .post<User>('/api/users', request)
       .pipe(switchMap(() => this.login(request.email, request.pin)));
+  }
+
+  /**
+   * Saves the profile and shows the saved values everywhere (e.g. the sidebar
+   * name). The server keeps the session valid even when the email changes.
+   */
+  updateProfile(request: UpdateProfileRequest): Observable<User> {
+    return this.http.put<User>('/api/users/me', request).pipe(tap((user) => this.user.set(user)));
+  }
+
+  /** A wrong current PIN fails with INCORRECT_PIN and counts toward the lockout. */
+  changePin(currentPin: string, newPin: string): Observable<void> {
+    return this.http.put<void>('/api/users/me/pin', { currentPin, newPin });
   }
 
   /** Local state is cleared even if the request fails. */

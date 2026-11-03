@@ -125,4 +125,39 @@ describe('AuthService', () => {
 
     expect(auth.currentUser()).toBeNull();
   });
+
+  it('saves the profile and shows the saved values', () => {
+    const updated = { ...USER, email: 'new@example.com', displayName: 'New Name' };
+    auth
+      .updateProfile({
+        email: 'new@example.com',
+        mobileNumber: USER.mobileNumber,
+        displayName: 'New Name',
+      })
+      .subscribe();
+
+    const req = backend.expectOne('/api/users/me');
+    expect(req.request.method).toBe('PUT');
+    req.flush(updated);
+
+    expect(auth.currentUser()).toEqual(updated);
+  });
+
+  it('keeps the session when the current PIN is wrong', () => {
+    auth.loadCurrentUser().subscribe();
+    backend.expectOne('/api/users/me').flush(USER);
+
+    let error: unknown;
+    auth.changePin('654321', '246810').subscribe({ error: (err) => (error = err) });
+    const req = backend.expectOne('/api/users/me/pin');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ currentPin: '654321', newPin: '246810' });
+    req.flush(
+      { error: 'INCORRECT_PIN', message: 'Current PIN is incorrect.' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+
+    expect(toApiError(error).error).toBe('INCORRECT_PIN');
+    expect(auth.currentUser()).toEqual(USER);
+  });
 });

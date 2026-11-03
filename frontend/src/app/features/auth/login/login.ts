@@ -6,11 +6,12 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { MobileFormatDirective } from '../../../core/forms/mobile-format.directive';
 import { looksLikeMobile, stripSpaces } from '../../../core/forms/mobile-number';
 import { toApiError } from '../../../core/http/api-error';
+import { PinField } from '../../../core/forms/pin-field';
 import { AuthLayout } from '../auth-layout';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, AuthLayout, MobileFormatDirective],
+  imports: [ReactiveFormsModule, RouterLink, AuthLayout, MobileFormatDirective, PinField],
   templateUrl: './login.html',
 })
 export class Login {

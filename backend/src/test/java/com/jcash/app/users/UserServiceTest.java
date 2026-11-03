@@ -191,6 +191,89 @@ class UserServiceTest {
                 .hasMessageContaining("missing@example.com");
     }
 
+    @Test
+    void updateProfileStoresNormalizedValues() {
+        User stored = stubStoredUser();
+        when(userRepository.saveAndFlush(stored)).thenReturn(stored);
+
+        User updated = userService.updateProfile(
+                EMAIL, "  New@Example.COM ", "+639181234567", "New Name");
+
+        assertThat(updated.getEmail()).isEqualTo("new@example.com");
+        assertThat(updated.getMobileNumber()).isEqualTo("09181234567");
+        assertThat(updated.getDisplayName()).isEqualTo("New Name");
+        assertThat(updated.getPinHash()).isEqualTo("bcrypt-hash");
+    }
+
+    @Test
+    void updateProfileAllowsKeepingOwnEmailAndMobileNumber() {
+        User stored = stubStoredUser();
+        when(userRepository.saveAndFlush(stored)).thenReturn(stored);
+
+        User updated = userService.updateProfile(EMAIL, EMAIL, MOBILE, "New Name");
+
+        // The "taken" checks exclude the user's own row, so no 409 here.
+        verify(userRepository).existsByEmailAndIdNot(EMAIL, stored.getId());
+        verify(userRepository).existsByMobileNumberAndIdNot(MOBILE, stored.getId());
+        assertThat(updated.getDisplayName()).isEqualTo("New Name");
+    }
+
+    @Test
+    void updateProfileRejectsEmailTakenByAnotherUser() {
+        User stored = stubStoredUser();
+        when(userRepository.existsByEmailAndIdNot("taken@example.com", stored.getId()))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> userService.updateProfile(
+                EMAIL, "taken@example.com", MOBILE, "Demo User"))
+                .isInstanceOf(UserAlreadyExistsException.class)
+                .hasMessageContaining("taken@example.com");
+
+        assertThat(stored.getEmail()).isEqualTo(EMAIL);
+        verify(userRepository, never()).saveAndFlush(any(User.class));
+    }
+
+    @Test
+    void updateProfileRejectsMobileNumberTakenByAnotherUser() {
+        User stored = stubStoredUser();
+        when(userRepository.existsByMobileNumberAndIdNot("09181234567", stored.getId()))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> userService.updateProfile(
+                EMAIL, EMAIL, "+639181234567", "Demo User"))
+                .isInstanceOf(MobileNumberAlreadyRegisteredException.class)
+                .hasMessageContaining("09181234567");
+
+        verify(userRepository, never()).saveAndFlush(any(User.class));
+    }
+
+    @Test
+    void updateProfileTranslatesConcurrentDuplicateEmailViolation() {
+        stubStoredUser();
+        when(userRepository.saveAndFlush(any(User.class)))
+                .thenThrow(integrityViolation(UserService.EMAIL_UNIQUE_CONSTRAINT));
+
+        assertThatThrownBy(() -> userService.updateProfile(
+                EMAIL, "new@example.com", MOBILE, "Demo User"))
+                .isInstanceOf(UserAlreadyExistsException.class)
+                .hasMessageContaining("new@example.com");
+    }
+
+    @Test
+    void updateProfileRejectsUnknownCurrentUser() {
+        when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.updateProfile(
+                "missing@example.com", EMAIL, MOBILE, "Demo User"))
+                .isInstanceOf(UserNotFoundException.class);
+    }
+
+    private User stubStoredUser() {
+        User stored = new User(EMAIL, MOBILE, "Demo User", "bcrypt-hash");
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(stored));
+        return stored;
+    }
+
     private void stubSuccessfulSave() {
         when(passwordEncoder.encode(PIN)).thenReturn("bcrypt-hash");
         when(userRepository.saveAndFlush(any(User.class)))

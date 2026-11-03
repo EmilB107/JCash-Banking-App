@@ -93,6 +93,17 @@ public class User {
         lockedUntil = null;
     }
 
+    // Callers pass already-normalized values (see UserService.updateProfile).
+    public void updateProfile(String email, String mobileNumber, String displayName) {
+        this.email = email;
+        this.mobileNumber = mobileNumber;
+        this.displayName = displayName;
+    }
+
+    public void changePinHash(String pinHash) {
+        this.pinHash = pinHash;
+    }
+
     public UUID getId() {
         return id;
     }

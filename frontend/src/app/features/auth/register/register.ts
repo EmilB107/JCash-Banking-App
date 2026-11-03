@@ -1,41 +1,25 @@
 import { Component, inject, signal } from '@angular/core';
-import {
-  AbstractControl,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { MobileFormatDirective } from '../../../core/forms/mobile-format.directive';
-import { MOBILE_PATTERN, stripSpaces } from '../../../core/forms/mobile-number';
+import { stripSpaces } from '../../../core/forms/mobile-number';
+import { PinField } from '../../../core/forms/pin-field';
+import {
+  EMAIL_PATTERN,
+  PIN_PATTERN,
+  mobileNumber,
+  pinsMatch,
+} from '../../../core/forms/validators';
 import { toApiError } from '../../../core/http/api-error';
 import { AuthLayout } from '../auth-layout';
 
-// Same rules as the backend's CreateUserRequest, so most mistakes are caught
-// before a request is sent. The backend still validates everything.
-const PIN_PATTERN = /^\d{6}$/;
-// Validators.email alone accepts "a@b"; this also requires a dot in the domain.
-const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-
 type Field = 'email' | 'mobileNumber' | 'displayName' | 'pin' | 'confirmPin';
-
-// The field shows "0917 123 4567", so check the number with the spaces removed.
-function mobileNumber(control: AbstractControl<string>): ValidationErrors | null {
-  return !control.value || MOBILE_PATTERN.test(stripSpaces(control.value))
-    ? null
-    : { mobileNumber: true };
-}
-
-function pinsMatch(group: AbstractControl): ValidationErrors | null {
-  return group.get('pin')?.value === group.get('confirmPin')?.value ? null : { pinMismatch: true };
-}
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink, AuthLayout, MobileFormatDirective],
+  imports: [ReactiveFormsModule, RouterLink, AuthLayout, MobileFormatDirective, PinField],
   templateUrl: './register.html',
 })
 export class Register {
@@ -50,7 +34,7 @@ export class Register {
       pin: ['', [Validators.required, Validators.pattern(PIN_PATTERN)]],
       confirmPin: ['', Validators.required],
     },
-    { validators: pinsMatch },
+    { validators: pinsMatch('pin', 'confirmPin') },
   );
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);

@@ -13,9 +13,10 @@
         autocomplete="name"
         formControlName="displayName"
         [attr.aria-invalid]="!!errorFor('displayName')"
+        [attr.aria-describedby]="errorFor('displayName') ? 'displayName-error' : null"
       />
       @if (errorFor('displayName'); as message) {
-        <p class="form-error">{{ message }}</p>
+        <p id="displayName-error" class="form-error">{{ message }}</p>
       }
     </div>
 
@@ -28,9 +29,10 @@
         autocomplete="email"
         formControlName="email"
         [attr.aria-invalid]="!!errorFor('email')"
+        [attr.aria-describedby]="errorFor('email') ? 'email-error' : null"
       />
       @if (errorFor('email'); as message) {
-        <p class="form-error">{{ message }}</p>
+        <p id="email-error" class="form-error">{{ message }}</p>
       }
     </div>
 
@@ -45,42 +47,51 @@
         formControlName="mobileNumber"
         appMobileFormat
         [attr.aria-invalid]="!!errorFor('mobileNumber')"
+        [attr.aria-describedby]="errorFor('mobileNumber') ? 'mobileNumber-error' : null"
       />
       @if (errorFor('mobileNumber'); as message) {
-        <p class="form-error">{{ message }}</p>
+        <p id="mobileNumber-error" class="form-error">{{ message }}</p>
       }
     </div>
 
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="form-label" for="pin">6-digit PIN</label>
-        <input
-          id="pin"
-          class="form-input tracking-widest"
-          type="password"
-          inputmode="numeric"
-          maxlength="6"
-          autocomplete="new-password"
-          formControlName="pin"
-          [attr.aria-invalid]="!!errorFor('pin')"
-        />
+        <app-pin-field label="PINs">
+          <input
+            id="pin"
+            class="form-input pr-10 tracking-widest"
+            type="password"
+            inputmode="numeric"
+            maxlength="6"
+            autocomplete="new-password"
+            formControlName="pin"
+            [attr.aria-invalid]="!!errorFor('pin')"
+            [attr.aria-describedby]="errorFor('pin') ? 'pin-error' : null"
+          />
+        </app-pin-field>
       </div>
       <div>
         <label class="form-label" for="confirmPin">Confirm PIN</label>
-        <input
-          id="confirmPin"
-          class="form-input tracking-widest"
-          type="password"
-          inputmode="numeric"
-          maxlength="6"
-          autocomplete="new-password"
-          formControlName="confirmPin"
-          [attr.aria-invalid]="!!errorFor('confirmPin')"
-        />
+        <app-pin-field label="PINs">
+          <input
+            id="confirmPin"
+            class="form-input pr-10 tracking-widest"
+            type="password"
+            inputmode="numeric"
+            maxlength="6"
+            autocomplete="new-password"
+            formControlName="confirmPin"
+            [attr.aria-invalid]="!!errorFor('confirmPin')"
+            [attr.aria-describedby]="
+              !errorFor('pin') && errorFor('confirmPin') ? 'pin-error' : null
+            "
+          />
+        </app-pin-field>
       </div>
     </div>
     @if (errorFor('pin') ?? errorFor('confirmPin'); as message) {
-      <p class="form-error -mt-2">{{ message }}</p>
+      <p id="pin-error" class="form-error -mt-2">{{ message }}</p>
     }
 
     <button class="btn-primary w-full" type="submit" [disabled]="submitting()">

@@ -1,0 +1,86 @@
+<div class="mx-auto max-w-lg">
+  <a class="link inline-flex items-center gap-1 text-sm" routerLink="/profile">
+    <svg lucideArrowLeft size="16"></svg>
+    Back to profile
+  </a>
+  <h1 class="mt-3 text-2xl font-semibold text-ink-950">Change PIN</h1>
+  <p class="mt-1 text-sm text-ink-600">You'll use the new PIN the next time you log in.</p>
+
+  <section class="card mt-6 p-6">
+    <form class="space-y-4" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (error(); as message) {
+        <div class="alert-error" role="alert">{{ message }}</div>
+      }
+
+      <!-- aria-describedby links each field to its error, so screen readers read it on focus. -->
+      <div>
+        <label class="form-label" for="currentPin">Current PIN</label>
+        <app-pin-field label="PINs">
+          <input
+            #currentPinInput
+            id="currentPin"
+            class="form-input pr-10 tracking-widest"
+            type="password"
+            inputmode="numeric"
+            maxlength="6"
+            autocomplete="current-password"
+            formControlName="currentPin"
+            [attr.aria-invalid]="!!errorFor('currentPin')"
+            [attr.aria-describedby]="errorFor('currentPin') ? 'currentPin-error' : null"
+          />
+        </app-pin-field>
+        @if (errorFor('currentPin'); as message) {
+          <p id="currentPin-error" class="form-error">{{ message }}</p>
+        }
+      </div>
+
+      <!-- One message under both fields; only the field it's about points to it. -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="form-label" for="newPin">New PIN</label>
+          <app-pin-field label="PINs">
+            <input
+              id="newPin"
+              class="form-input pr-10 tracking-widest"
+              type="password"
+              inputmode="numeric"
+              maxlength="6"
+              autocomplete="new-password"
+              formControlName="newPin"
+              [attr.aria-invalid]="!!errorFor('newPin')"
+              [attr.aria-describedby]="errorFor('newPin') ? 'newPin-error' : null"
+            />
+          </app-pin-field>
+        </div>
+        <div>
+          <label class="form-label" for="confirmPin">Confirm new PIN</label>
+          <app-pin-field label="PINs">
+            <input
+              id="confirmPin"
+              class="form-input pr-10 tracking-widest"
+              type="password"
+              inputmode="numeric"
+              maxlength="6"
+              autocomplete="new-password"
+              formControlName="confirmPin"
+              [attr.aria-invalid]="!!errorFor('confirmPin')"
+              [attr.aria-describedby]="
+                !errorFor('newPin') && errorFor('confirmPin') ? 'newPin-error' : null
+              "
+            />
+          </app-pin-field>
+        </div>
+      </div>
+      @if (errorFor('newPin') ?? errorFor('confirmPin'); as message) {
+        <p id="newPin-error" class="form-error -mt-2">{{ message }}</p>
+      }
+
+      <div class="flex gap-3">
+        <button class="btn-primary flex-1" type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Saving…' : 'Save new PIN' }}
+        </button>
+        <a class="btn-secondary" routerLink="/profile">Cancel</a>
+      </div>
+    </form>
+  </section>
+</div>

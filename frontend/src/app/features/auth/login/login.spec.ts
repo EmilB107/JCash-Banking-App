@@ -1,3 +1,4 @@
+import { ApplicationRef } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
@@ -85,5 +86,28 @@ describe('Login', () => {
 
     expect(el.querySelector('[role=alert]')?.textContent).toContain('Account is locked');
     expect(el.querySelector<HTMLInputElement>('#pin')!.value).toBe('');
+    // Cleared by code, not typing: the eye button still disappears.
+    expect(el.querySelector('app-pin-field button')).toBeNull();
+  });
+
+  it('shows the eye button only once a PIN is typed, and it reveals the PIN', () => {
+    const { el, type } = setup();
+    const app = TestBed.inject(ApplicationRef);
+    const pin = el.querySelector<HTMLInputElement>('#pin')!;
+    const eye = () => el.querySelector<HTMLButtonElement>('app-pin-field button');
+    expect(eye()).toBeNull();
+
+    type('pin', '12');
+    app.tick();
+    expect(eye()!.getAttribute('aria-label')).toBe('Show PIN');
+
+    eye()!.click();
+    app.tick();
+    expect(pin.type).toBe('text');
+    expect(eye()!.getAttribute('aria-label')).toBe('Hide PIN');
+
+    type('pin', '');
+    app.tick();
+    expect(eye()).toBeNull();
   });
 });

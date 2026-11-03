@@ -50,6 +50,6 @@ The frontend calls the API with relative `/api/...` URLs. During local developme
 The API plumbing lives in `frontend/src/app/core/`:
 
 - `http/csrf.interceptor.ts` adds the `X-XSRF-TOKEN` header to state-changing `/api/` requests. It reads the `XSRF-TOKEN` cookie and, when the cookie is missing (first visit, or after logout), fetches one from `GET /api/auth/csrf`. Angular's built-in XSRF support is disabled because it never fetches a missing token.
-- `auth/auth.service.ts` holds the signed-in user as a signal (`undefined` = not yet checked, `null` = signed out) and exposes `login`, `logout`, and `loadCurrentUser`. The session is restored from `GET /api/users/me` when the app starts.
+- `auth/auth.service.ts` holds the signed-in user as a signal (`undefined` = not yet checked, `null` = signed out) and exposes `login`, `register`, `logout`, `loadCurrentUser`, `updateProfile`, and `changePin`. The session is restored from `GET /api/users/me` when the app starts.
 - `auth/session-expired.interceptor.ts` clears the signed-in state when any API call other than login returns 401.
 - `http/api-error.ts` converts HTTP failures to the backend's `{error, message}` shape, including network failures (`NETWORK_ERROR`).

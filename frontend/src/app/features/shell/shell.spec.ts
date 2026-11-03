@@ -23,17 +23,12 @@ describe('Shell', () => {
     expect(el.querySelector('aside')!.textContent).toContain('Juan Carlos Dela Cruz');
   });
 
-  it('links to built pages and shows upcoming ones as disabled', () => {
+  it('links to every page', () => {
     const el = setup('Juan').nativeElement as HTMLElement;
     const links = [...el.querySelectorAll('nav[aria-label=Main] a')].map((a) =>
       a.getAttribute('href'),
     );
-    expect(links).toEqual(['/dashboard', '/cash-in', '/send', '/history']);
-
-    const disabled = [...el.querySelectorAll('[aria-disabled=true]')].map((s) =>
-      s.textContent!.trim(),
-    );
-    expect(disabled).toEqual(['Profile']);
+    expect(links).toEqual(['/dashboard', '/cash-in', '/send', '/history', '/profile']);
   });
 
   describe('mobile menu', () => {
