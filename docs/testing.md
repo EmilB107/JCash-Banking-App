@@ -109,3 +109,47 @@ With the backend running on `http://localhost:8080`:
   ```
 
 To test another server, change the `baseUrl` collection variable (or pass `--env-var baseUrl=https://...` to newman).
+
+## End-to-end verification
+This checks the whole system together: the browser or API client, the backend, and the database. It has two parts.
+
+### 1. Move money between separate users
+Either run the [Postman collection](#postman-collection), which registers Alice and Bob, cashes in, transfers, and checks both sides, or do it by hand in the Angular app:
+
+1. Open the app in a normal window and in a private window, so each window has its own session.
+2. Register a different user in each window, for example Alice and Bob.
+3. As Alice, cash in an amount, then send part of it to Bob by mobile number.
+4. As Bob, refresh the dashboard: the balance and the history entry ("Transfer from Alice ...") should appear.
+5. As Alice, check the balance went down by exactly the amount sent, and that the history shows the transfer.
+
+### 2. Check the ledger in the database
+`scripts/sql/verify-ledger.sql` is a read-only script (SELECTs only) that checks the rules every correct ledger must follow:
+
+| # | Rule | What a failure would mean |
+|---|---|---|
+| 1 | Account balance = credits − debits | A balance changed without a matching entry, or an entry was written without updating the balance |
+| 2 | Each entry's `balance_after` = running balance | Entries were applied out of order or with the wrong amount |
+| 3 | Every transfer has both a DEBIT and a CREDIT | Half a transfer committed (money vanished or appeared) |
+| 4 | Both halves have the same amount and currency | The recipient got a different amount than the sender paid |
+| 5 | Transfer halves point at each other, between different accounts | Broken counterparty links, or a self-transfer slipped through |
+| 6 | Entry currency matches its account currency | Mixed currencies in one account |
+| 7 | Every user has an account | Registration created a user without an account |
+| 8 | Total of all balances = total cash-in | Money was created or destroyed outside cash-in (transfers only move money) |
+| 9 | Transfers recorded = completed idempotency keys | A retried request was processed twice |
+
+Run it against the development database (it asks for the `jcash_banking_user` password):
+```bash
+psql -h localhost -U jcash_banking_user -d jcash_banking_db -f scripts/sql/verify-ledger.sql
+```
+Every row should say `PASS`. The second table shows totals (users, cash-ins, transfers, and the sum of all balances) for context.
+
+The database constraints already block some of these at write time (for example, a negative balance or two DEBITs for one transfer). The script checks the rules that span several rows or tables, which a single constraint can't enforce.
+
+To see the checks fail, break the data inside a transaction and roll it back, so nothing is saved:
+```sql
+BEGIN;
+UPDATE accounts SET balance = balance + 5 WHERE id = (SELECT id FROM accounts LIMIT 1);
+\i scripts/sql/verify-ledger.sql
+ROLLBACK;
+```
+Rules 1 and 8 then report `FAIL`.
