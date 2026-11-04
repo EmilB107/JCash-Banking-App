@@ -94,3 +94,18 @@ Without PostgreSQL these tests fail rather than skip. In that case run the non-d
 A database test that did not run is not evidence that rollback, migration, or concurrency behavior passed.
 
 Use deterministic test data. Integration tests should exercise transaction behavior and database constraints, not only mocked service logic. Never use real financial or personal data in test fixtures.
+
+## Postman collection
+`postman/JCash.postman_collection.json` walks through the whole API against a running backend, in this order: setup (health and CSRF token), registration, authentication (including the 3-attempt lockout), cash-in, transfers, transaction history, profile and PIN change, and the recipient's view of the transfer. Each request has Postman tests that check the status code, the `error` code on failures, and the important response fields.
+
+Every run registers fresh users (Alice, Bob, and Carol) with unique emails and mobile numbers, so you can repeat it against the development database. Those users stay in the database afterwards. The requests depend on each other (later ones use the saved session cookie, CSRF token, and IDs), so always run the whole collection in order, not single requests.
+
+With the backend running on `http://localhost:8080`:
+
+- **Postman app:** Import the file, open the collection, and choose **Run**.
+- **Command line:**
+  ```bash
+  npx newman run postman/JCash.postman_collection.json
+  ```
+
+To test another server, change the `baseUrl` collection variable (or pass `--env-var baseUrl=https://...` to newman).

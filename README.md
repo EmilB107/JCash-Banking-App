@@ -32,6 +32,7 @@ JCash-Banking-App/
 ├── scripts/       # Linux, macOS, and Windows development launchers
 ├── backend/       # Java and Spring Boot application
 ├── frontend/      # Angular application
+├── postman/       # Postman collection for the API
 └── docs/          # Setup and technical documentation
 ```
 
