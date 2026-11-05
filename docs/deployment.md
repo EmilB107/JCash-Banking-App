@@ -41,6 +41,8 @@ Create a **Web Service** from the GitHub repository with:
 
 Environment variables: `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` from the [database section](#database-supabase), plus `ACTUATOR_USERNAME` and a new long random `ACTUATOR_PASSWORD`. Render sets `PORT` itself, and `server.port=${PORT:8080}` picks it up.
 
+The free instance has only 0.1 CPU, which made Spring Boot start about 23 times slower than on a PC, so slowly that Supabase's pooler closed the first encrypted connection before Java finished setting it up. The Dockerfile therefore starts Java with lighter JIT and garbage-collector settings and a Class Data Sharing archive made during the build (together about 4× less startup CPU), and HikariCP retries the first connection for up to 60 seconds (`initialization-fail-timeout`).
+
 The free instance sleeps after about 15 minutes without traffic, and the next request waits for the app to start again (around a minute). Supabase's free Session pooler allows only a small number of connections, so don't run a local backend against Supabase while the Render one is running: each holds up to 10 (the HikariCP pool size).
 
 ## Deployment checklist
