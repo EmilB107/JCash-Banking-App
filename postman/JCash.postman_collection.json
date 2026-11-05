@@ -4,6 +4,24 @@
     "description": "End-to-end walkthrough of the JCash API. Run the whole collection in order\n(Collection Runner or `npx newman run`): later requests use variables and the\nsession cookie saved by earlier ones.\n\nEach run registers fresh users (Alice, Bob, and Carol) with unique emails and\nmobile numbers, so it can be repeated against the same database.\n\nSet the `baseUrl` collection variable to point at another server.\nAll money is simulated; no real funds are involved.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Runs before every request, so the headers below aren't repeated on each one.",
+          "// Write requests (POST, PUT, ...) must send the CSRF token Spring Security expects.",
+          "if (pm.request.method !== \"GET\") {",
+          "    pm.request.headers.upsert({ key: \"X-XSRF-TOKEN\", value: pm.collectionVariables.get(\"csrfToken\") });",
+          "}",
+          "// Requests with a JSON body tell the server it's JSON.",
+          "if (pm.request.body && pm.request.body.mode === \"raw\") {",
+          "    pm.request.headers.upsert({ key: \"Content-Type\", value: \"application/json\" });",
+          "}"
+        ]
+      }
+    }
+  ],
   "variable": [
     {
       "key": "baseUrl",
@@ -22,23 +40,12 @@
           "name": "Health check",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/health",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "health"
-              ]
-            }
+            "url": "{{baseUrl}}/api/health"
           },
           "event": [
             {
               "listen": "prerequest",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "const runId = Date.now();",
                   "const mobile = () => \"09\" + String(Math.floor(Math.random() * 1e9)).padStart(9, \"0\");",
@@ -58,7 +65,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 UP\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -73,24 +79,12 @@
           "name": "Get CSRF token",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/csrf",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "csrf"
-              ]
-            }
+            "url": "{{baseUrl}}/api/auth/csrf"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 with a CSRF token\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -111,26 +105,7 @@
           "name": "Register Alice",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users"
-              ]
-            },
+            "url": "{{baseUrl}}/api/users",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{aliceEmail}}\",\n  \"mobileNumber\": \"{{aliceMobile}}\",\n  \"displayName\": \"Alice Santos\",\n  \"pin\": \"{{alicePin}}\"\n}",
@@ -145,7 +120,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 201 with the new user\", () => {",
                   "    pm.response.to.have.status(201);",
@@ -164,26 +138,7 @@
           "name": "Register Bob (mixed-case email, +63 mobile)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users"
-              ]
-            },
+            "url": "{{baseUrl}}/api/users",
             "description": "Shows normalization: the email is lowercased and +639... is stored as 09....",
             "body": {
               "mode": "raw",
@@ -199,7 +154,6 @@
             {
               "listen": "prerequest",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "const email = pm.collectionVariables.get(\"bobEmail\");",
                   "pm.variables.set(\"bobEmailMixedCase\", email.charAt(0).toUpperCase() + email.slice(1));",
@@ -210,7 +164,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 201 with normalized email and mobile number\", () => {",
                   "    pm.response.to.have.status(201);",
@@ -227,26 +180,7 @@
           "name": "Register Carol (lockout demo)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users"
-              ]
-            },
+            "url": "{{baseUrl}}/api/users",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{carolEmail}}\",\n  \"mobileNumber\": \"{{carolMobile}}\",\n  \"displayName\": \"Carol Cruz\",\n  \"pin\": \"111111\"\n}",
@@ -261,7 +195,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 201\", () => pm.response.to.have.status(201));"
                 ]
@@ -273,26 +206,7 @@
           "name": "Reject duplicate email",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users"
-              ]
-            },
+            "url": "{{baseUrl}}/api/users",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{aliceEmail}}\",\n  \"mobileNumber\": \"09000000000\",\n  \"displayName\": \"Copycat\",\n  \"pin\": \"123456\"\n}",
@@ -307,7 +221,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 409 EMAIL_ALREADY_REGISTERED\", () => {",
                   "    pm.response.to.have.status(409);",
@@ -322,26 +235,7 @@
           "name": "Reject duplicate mobile number",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users"
-              ]
-            },
+            "url": "{{baseUrl}}/api/users",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{unusedEmail}}\",\n  \"mobileNumber\": \"{{aliceMobile}}\",\n  \"displayName\": \"Copycat\",\n  \"pin\": \"123456\"\n}",
@@ -356,7 +250,6 @@
             {
               "listen": "prerequest",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.variables.set(\"unusedEmail\", `nobody.${Date.now()}@example.com`);"
                 ]
@@ -365,7 +258,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 409 MOBILE_NUMBER_ALREADY_REGISTERED\", () => {",
                   "    pm.response.to.have.status(409);",
@@ -380,26 +272,7 @@
           "name": "Reject invalid fields",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users"
-              ]
-            },
+            "url": "{{baseUrl}}/api/users",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"not-an-email\",\n  \"mobileNumber\": \"12345\",\n  \"displayName\": \"\",\n  \"pin\": \"12ab\"\n}",
@@ -414,7 +287,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 400 VALIDATION_FAILED\", () => {",
                   "    pm.response.to.have.status(400);",
@@ -434,24 +306,12 @@
           "name": "Reject protected endpoint without a session",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "me"
-              ]
-            }
+            "url": "{{baseUrl}}/api/users/me"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 401\", () => pm.response.to.have.status(401));"
                 ]
@@ -463,27 +323,7 @@
           "name": "Reject wrong PIN",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
-            },
+            "url": "{{baseUrl}}/api/auth/login",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"identifier\": \"{{bobEmail}}\",\n  \"pin\": \"000000\"\n}",
@@ -498,7 +338,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 401 INVALID_CREDENTIALS\", () => {",
                   "    pm.response.to.have.status(401);",
@@ -513,27 +352,7 @@
           "name": "Reject unknown user with the same error",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
-            },
+            "url": "{{baseUrl}}/api/auth/login",
             "description": "Same 401 as a wrong PIN, so the API does not reveal which emails or mobile numbers are registered.",
             "body": {
               "mode": "raw",
@@ -549,7 +368,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 401 INVALID_CREDENTIALS\", () => {",
                   "    pm.response.to.have.status(401);",
@@ -564,27 +382,7 @@
           "name": "Carol: wrong PIN 1 of 3",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
-            },
+            "url": "{{baseUrl}}/api/auth/login",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"identifier\": \"{{carolEmail}}\",\n  \"pin\": \"000000\"\n}",
@@ -599,7 +397,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 401 INVALID_CREDENTIALS\", () => {",
                   "    pm.response.to.have.status(401);",
@@ -614,27 +411,7 @@
           "name": "Carol: wrong PIN 2 of 3",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
-            },
+            "url": "{{baseUrl}}/api/auth/login",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"identifier\": \"{{carolEmail}}\",\n  \"pin\": \"000000\"\n}",
@@ -649,7 +426,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 401 INVALID_CREDENTIALS\", () => {",
                   "    pm.response.to.have.status(401);",
@@ -664,27 +440,7 @@
           "name": "Carol: wrong PIN 3 of 3 locks the account",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
-            },
+            "url": "{{baseUrl}}/api/auth/login",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"identifier\": \"{{carolEmail}}\",\n  \"pin\": \"000000\"\n}",
@@ -699,7 +455,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 423 ACCOUNT_LOCKED\", () => {",
                   "    pm.response.to.have.status(423);",
@@ -714,27 +469,7 @@
           "name": "Carol: correct PIN still rejected while locked",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
-            },
+            "url": "{{baseUrl}}/api/auth/login",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"identifier\": \"{{carolEmail}}\",\n  \"pin\": \"111111\"\n}",
@@ -749,7 +484,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 423 ACCOUNT_LOCKED\", () => {",
                   "    pm.response.to.have.status(423);",
@@ -764,27 +498,7 @@
           "name": "Log in as Alice (by mobile number)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
-            },
+            "url": "{{baseUrl}}/api/auth/login",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"identifier\": \"{{aliceMobile}}\",\n  \"pin\": \"{{alicePin}}\"\n}",
@@ -799,7 +513,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 Login successful\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -814,24 +527,12 @@
           "name": "Refresh CSRF token after login",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/csrf",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "csrf"
-              ]
-            }
+            "url": "{{baseUrl}}/api/auth/csrf"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 with a CSRF token\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -847,24 +548,12 @@
           "name": "Get current user",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "me"
-              ]
-            }
+            "url": "{{baseUrl}}/api/users/me"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns Alice's profile\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -885,24 +574,12 @@
           "name": "Get account (starts at zero)",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/accounts/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "accounts",
-                "me"
-              ]
-            }
+            "url": "{{baseUrl}}/api/accounts/me"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns a PHP account with a zero balance\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -920,28 +597,7 @@
           "name": "Cash in 1,000.00",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/accounts/me/cash-in",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "accounts",
-                "me",
-                "cash-in"
-              ]
-            },
+            "url": "{{baseUrl}}/api/accounts/me/cash-in",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"amount\": 1000\n}",
@@ -956,7 +612,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 with balance 1000.00\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -971,28 +626,7 @@
           "name": "Reject cash-in over the 100,000.00 cap",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/accounts/me/cash-in",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "accounts",
-                "me",
-                "cash-in"
-              ]
-            },
+            "url": "{{baseUrl}}/api/accounts/me/cash-in",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"amount\": 100000.01\n}",
@@ -1007,7 +641,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 400 VALIDATION_FAILED\", () => {",
                   "    pm.response.to.have.status(400);",
@@ -1022,28 +655,7 @@
           "name": "Reject cash-in with 3 decimal places",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/accounts/me/cash-in",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "accounts",
-                "me",
-                "cash-in"
-              ]
-            },
+            "url": "{{baseUrl}}/api/accounts/me/cash-in",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"amount\": 10.005\n}",
@@ -1058,7 +670,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 400 VALIDATION_FAILED\", () => {",
                   "    pm.response.to.have.status(400);",
@@ -1073,28 +684,7 @@
           "name": "Reject cash-in of zero",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/accounts/me/cash-in",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "accounts",
-                "me",
-                "cash-in"
-              ]
-            },
+            "url": "{{baseUrl}}/api/accounts/me/cash-in",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"amount\": 0\n}",
@@ -1109,7 +699,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 400 VALIDATION_FAILED\", () => {",
                   "    pm.response.to.have.status(400);",
@@ -1131,24 +720,11 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
                 "key": "Idempotency-Key",
                 "value": "no-csrf-{{transferKey}}"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}/api/transfers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "transfers"
-              ]
-            },
+            "url": "{{baseUrl}}/api/transfers",
             "description": "No X-XSRF-TOKEN header, so Spring Security blocks the request before it reaches the controller.",
             "body": {
               "mode": "raw",
@@ -1162,9 +738,18 @@
           },
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// The collection script adds the CSRF header to every write request;",
+                  "// remove it here because this request tests what happens without it.",
+                  "pm.request.headers.remove(\"X-XSRF-TOKEN\");"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 403\", () => pm.response.to.have.status(403));"
                 ]
@@ -1176,26 +761,7 @@
           "name": "Reject transfer without Idempotency-Key",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/transfers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "transfers"
-              ]
-            },
+            "url": "{{baseUrl}}/api/transfers",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"recipient\": \"{{bobMobile}}\",\n  \"amount\": 1\n}",
@@ -1210,7 +776,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 400 INVALID_IDEMPOTENCY_KEY\", () => {",
                   "    pm.response.to.have.status(400);",
@@ -1227,28 +792,11 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              },
-              {
                 "key": "Idempotency-Key",
                 "value": "{{transferKey}}"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}/api/transfers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "transfers"
-              ]
-            },
+            "url": "{{baseUrl}}/api/transfers",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"recipient\": \"{{bobMobile}}\",\n  \"amount\": 250.5\n}",
@@ -1263,7 +811,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 with both balances\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -1286,28 +833,11 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              },
-              {
                 "key": "Idempotency-Key",
                 "value": "{{transferKey}}"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}/api/transfers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "transfers"
-              ]
-            },
+            "url": "{{baseUrl}}/api/transfers",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"recipient\": \"{{bobEmail}}\",\n  \"amount\": 250.5\n}",
@@ -1322,7 +852,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns the original response instead of transferring again\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -1340,28 +869,11 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              },
-              {
                 "key": "Idempotency-Key",
                 "value": "{{transferKey}}"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}/api/transfers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "transfers"
-              ]
-            },
+            "url": "{{baseUrl}}/api/transfers",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"recipient\": \"{{bobEmail}}\",\n  \"amount\": 1\n}",
@@ -1376,7 +888,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 409 IDEMPOTENCY_KEY_CONFLICT\", () => {",
                   "    pm.response.to.have.status(409);",
@@ -1393,28 +904,11 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              },
-              {
                 "key": "Idempotency-Key",
                 "value": "self-{{transferKey}}"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}/api/transfers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "transfers"
-              ]
-            },
+            "url": "{{baseUrl}}/api/transfers",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"recipient\": \"{{aliceEmail}}\",\n  \"amount\": 1\n}",
@@ -1429,7 +923,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 400 SELF_TRANSFER_NOT_ALLOWED\", () => {",
                   "    pm.response.to.have.status(400);",
@@ -1446,28 +939,11 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              },
-              {
                 "key": "Idempotency-Key",
                 "value": "unknown-{{transferKey}}"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}/api/transfers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "transfers"
-              ]
-            },
+            "url": "{{baseUrl}}/api/transfers",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"recipient\": \"nobody@example.com\",\n  \"amount\": 1\n}",
@@ -1482,7 +958,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 404 RESOURCE_NOT_FOUND\", () => {",
                   "    pm.response.to.have.status(404);",
@@ -1499,28 +974,11 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              },
-              {
                 "key": "Idempotency-Key",
                 "value": "too-much-{{transferKey}}"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}/api/transfers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "transfers"
-              ]
-            },
+            "url": "{{baseUrl}}/api/transfers",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"recipient\": \"{{bobEmail}}\",\n  \"amount\": 5000\n}",
@@ -1535,7 +993,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 400 INSUFFICIENT_FUNDS\", () => {",
                   "    pm.response.to.have.status(400);",
@@ -1550,24 +1007,12 @@
           "name": "Balance shows exactly one transfer",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/accounts/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "accounts",
-                "me"
-              ]
-            }
+            "url": "{{baseUrl}}/api/accounts/me"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"balance is 749.50 (the retry did not debit again)\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -1587,34 +1032,12 @@
           "name": "Get history (newest first)",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/transactions/me?page=0&size=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "transactions",
-                "me"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "0"
-                },
-                {
-                  "key": "size",
-                  "value": "20"
-                }
-              ]
-            }
+            "url": "{{baseUrl}}/api/transactions/me?page=0&size=20"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "const history = pm.response.json();",
                   "pm.test(\"returns 200 with 2 entries\", () => {",
@@ -1643,34 +1066,12 @@
           "name": "Get second page of size 1",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/transactions/me?page=1&size=1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "transactions",
-                "me"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "size",
-                  "value": "1"
-                }
-              ]
-            }
+            "url": "{{baseUrl}}/api/transactions/me?page=1&size=1"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns the older entry (cash-in)\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -1687,34 +1088,12 @@
           "name": "Reject page size over 100",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/transactions/me?page=0&size=101",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "transactions",
-                "me"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "0"
-                },
-                {
-                  "key": "size",
-                  "value": "101"
-                }
-              ]
-            }
+            "url": "{{baseUrl}}/api/transactions/me?page=0&size=101"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 400 INVALID_PAGE_REQUEST\", () => {",
                   "    pm.response.to.have.status(400);",
@@ -1734,27 +1113,7 @@
           "name": "Update display name",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "me"
-              ]
-            },
+            "url": "{{baseUrl}}/api/users/me",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{aliceEmail}}\",\n  \"mobileNumber\": \"{{aliceMobile}}\",\n  \"displayName\": \"Alice S. Santos\"\n}",
@@ -1769,7 +1128,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 with the new display name\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -1784,27 +1142,7 @@
           "name": "Reject taking another user's mobile number",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "me"
-              ]
-            },
+            "url": "{{baseUrl}}/api/users/me",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{aliceEmail}}\",\n  \"mobileNumber\": \"{{bobMobile}}\",\n  \"displayName\": \"Alice S. Santos\"\n}",
@@ -1819,7 +1157,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 409 MOBILE_NUMBER_ALREADY_REGISTERED\", () => {",
                   "    pm.response.to.have.status(409);",
@@ -1834,28 +1171,7 @@
           "name": "Reject PIN change with wrong current PIN",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/me/pin",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "me",
-                "pin"
-              ]
-            },
+            "url": "{{baseUrl}}/api/users/me/pin",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"currentPin\": \"000000\",\n  \"newPin\": \"{{aliceNewPin}}\"\n}",
@@ -1870,7 +1186,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 400 INCORRECT_PIN\", () => {",
                   "    pm.response.to.have.status(400);",
@@ -1885,28 +1200,7 @@
           "name": "Change PIN",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/me/pin",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "me",
-                "pin"
-              ]
-            },
+            "url": "{{baseUrl}}/api/users/me/pin",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"currentPin\": \"{{alicePin}}\",\n  \"newPin\": \"{{aliceNewPin}}\"\n}",
@@ -1921,7 +1215,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 204\", () => pm.response.to.have.status(204));"
                 ]
@@ -1933,29 +1226,12 @@
           "name": "Log out Alice",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/logout",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "logout"
-              ]
-            }
+            "url": "{{baseUrl}}/api/auth/logout"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 204\", () => pm.response.to.have.status(204));"
                 ]
@@ -1967,24 +1243,12 @@
           "name": "Session is gone after logout",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "me"
-              ]
-            }
+            "url": "{{baseUrl}}/api/users/me"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 401\", () => pm.response.to.have.status(401));"
                 ]
@@ -1996,24 +1260,12 @@
           "name": "Refresh CSRF token after logout",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/csrf",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "csrf"
-              ]
-            }
+            "url": "{{baseUrl}}/api/auth/csrf"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 with a CSRF token\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -2029,27 +1281,7 @@
           "name": "Old PIN no longer works",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
-            },
+            "url": "{{baseUrl}}/api/auth/login",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"identifier\": \"{{aliceEmail}}\",\n  \"pin\": \"{{alicePin}}\"\n}",
@@ -2064,7 +1296,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 401 INVALID_CREDENTIALS\", () => {",
                   "    pm.response.to.have.status(401);",
@@ -2079,27 +1310,7 @@
           "name": "New PIN works",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
-            },
+            "url": "{{baseUrl}}/api/auth/login",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"identifier\": \"{{aliceEmail}}\",\n  \"pin\": \"{{aliceNewPin}}\"\n}",
@@ -2114,7 +1325,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 Login successful\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -2129,24 +1339,12 @@
           "name": "Refresh CSRF token after second login",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/csrf",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "csrf"
-              ]
-            }
+            "url": "{{baseUrl}}/api/auth/csrf"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 with a CSRF token\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -2162,29 +1360,12 @@
           "name": "Log out Alice again",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/logout",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "logout"
-              ]
-            }
+            "url": "{{baseUrl}}/api/auth/logout"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 204\", () => pm.response.to.have.status(204));"
                 ]
@@ -2201,24 +1382,12 @@
           "name": "Get CSRF token",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/csrf",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "csrf"
-              ]
-            }
+            "url": "{{baseUrl}}/api/auth/csrf"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 with a CSRF token\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -2234,27 +1403,7 @@
           "name": "Log in as Bob (by email)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
-            },
+            "url": "{{baseUrl}}/api/auth/login",
             "description": "A successful login also resets the failed-attempt count from \"Reject wrong PIN\".",
             "body": {
               "mode": "raw",
@@ -2270,7 +1419,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 Login successful\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -2285,24 +1433,12 @@
           "name": "Refresh CSRF token after login",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/csrf",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "csrf"
-              ]
-            }
+            "url": "{{baseUrl}}/api/auth/csrf"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 200 with a CSRF token\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -2318,24 +1454,12 @@
           "name": "Bob's balance is 250.50",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/accounts/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "accounts",
-                "me"
-              ]
-            }
+            "url": "{{baseUrl}}/api/accounts/me"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns balance 250.50\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -2350,24 +1474,12 @@
           "name": "Bob's history has the matching credit",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/transactions/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "transactions",
-                "me"
-              ]
-            }
+            "url": "{{baseUrl}}/api/transactions/me"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"one TRANSFER CREDIT linked to Alice's debit\", () => {",
                   "    pm.response.to.have.status(200);",
@@ -2389,29 +1501,12 @@
           "name": "Log out Bob",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "X-XSRF-TOKEN",
-                "value": "{{csrfToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/logout",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "logout"
-              ]
-            }
+            "url": "{{baseUrl}}/api/auth/logout"
           },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"returns 204\", () => pm.response.to.have.status(204));"
                 ]
