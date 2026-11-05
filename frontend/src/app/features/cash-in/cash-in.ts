@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { BalanceToggle } from '../../core/account/balance-toggle';
+import { onTabReturn } from '../../core/browser/tab-return';
 import {
   BalanceVisibilityService,
   MASKED_AMOUNT,
@@ -37,6 +38,11 @@ export class CashIn {
   protected readonly added = signal<number | null>(null);
 
   constructor() {
+    this.loadBalance();
+    onTabReturn(() => this.loadBalance());
+  }
+
+  private loadBalance(): void {
     this.accounts
       .getMyAccount()
       .subscribe({ next: (account) => this.account.set(account), error: () => undefined });

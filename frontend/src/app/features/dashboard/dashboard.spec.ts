@@ -86,6 +86,20 @@ describe('Dashboard', () => {
     expect(el.querySelector('a[href="/history"]')!.textContent).toContain('View all');
   });
 
+  it('reloads the balance when the user returns to the tab', () => {
+    getMyHistory.mockReturnValue(of(page([])));
+    const { fixture, el } = setup();
+    expect(el.querySelector('[data-testid=balance]')!.textContent).toContain('₱1,500.00');
+
+    // Meanwhile, money was sent from another tab.
+    getMyAccount.mockReturnValue(of({ ...ACCOUNT, balance: 600 }));
+    document.dispatchEvent(new Event('visibilitychange'));
+    fixture.detectChanges();
+
+    expect(getMyAccount).toHaveBeenCalledTimes(2);
+    expect(el.querySelector('[data-testid=balance]')!.textContent).toContain('₱600.00');
+  });
+
   it('shows an empty state for a new wallet', () => {
     getMyHistory.mockReturnValue(of(page([])));
     const { el } = setup();

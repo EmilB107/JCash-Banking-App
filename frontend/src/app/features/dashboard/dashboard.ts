@@ -5,6 +5,7 @@ import { forkJoin } from 'rxjs';
 import { Account } from '../../core/account/account';
 import { AccountService } from '../../core/account/account.service';
 import { BalanceToggle } from '../../core/account/balance-toggle';
+import { onTabReturn } from '../../core/browser/tab-return';
 import {
   BalanceVisibilityService,
   MASKED_AMOUNT,
@@ -33,6 +34,7 @@ export class Dashboard {
 
   constructor() {
     this.load();
+    onTabReturn(() => this.load());
   }
 
   /** Loads the balance and recent activity together; also used by the "Try again" button. */

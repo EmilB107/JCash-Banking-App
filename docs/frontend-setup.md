@@ -53,3 +53,4 @@ The API plumbing lives in `frontend/src/app/core/`:
 - `auth/auth.service.ts` holds the signed-in user as a signal (`undefined` = not yet checked, `null` = signed out) and exposes `login`, `register`, `logout`, `loadCurrentUser`, `updateProfile`, and `changePin`. The session is restored from `GET /api/users/me` when the app starts.
 - `auth/session-expired.interceptor.ts` clears the signed-in state when any API call other than login returns 401.
 - `http/api-error.ts` converts HTTP failures to the backend's `{error, message}` shape, including network failures (`NETWORK_ERROR`).
+- `browser/tab-return.ts`: `onTabReturn()` reloads the balance on the dashboard, cash-in, and send-money pages when the user returns to the tab, since changes made in another tab don't show up otherwise.

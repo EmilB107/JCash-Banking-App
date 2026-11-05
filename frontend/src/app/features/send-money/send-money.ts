@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { BalanceToggle } from '../../core/account/balance-toggle';
+import { onTabReturn } from '../../core/browser/tab-return';
 import {
   BalanceVisibilityService,
   MASKED_AMOUNT,
@@ -52,9 +53,16 @@ export class SendMoney {
    */
   private attempt: { request: TransferRequest; key: string } | null = null;
 
+  private readonly accounts = inject(AccountService);
+
   constructor() {
+    this.loadBalance();
+    onTabReturn(() => this.loadBalance());
+  }
+
+  private loadBalance(): void {
     // If this fails the page still works; the backend checks the balance anyway.
-    inject(AccountService)
+    this.accounts
       .getMyAccount()
       .subscribe({ next: (account) => this.balance.set(account.balance), error: () => undefined });
   }
