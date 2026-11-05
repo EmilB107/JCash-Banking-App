@@ -77,6 +77,8 @@ java -Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 \
 | `-XX:MaxGCPauseMillis=200` | G1's pause-time target (its default value, written down). |
 | `-XX:+HeapDumpOnOutOfMemoryError` | If memory runs out, a heap dump is written so the cause can be found. |
 
+The deployed container doesn't use these: it runs the jar directly, with the flags in `backend/Dockerfile`, tuned for Render's free plan (512 MB, 0.1 CPU). There, `-XX:MaxRAMPercentage=75` sizes the heap from the container's memory (a fixed `-Xmx512m` would leave nothing for the rest of the JVM), and `-XX:+UseSerialGC`, `-XX:TieredStopAtLevel=1`, and a Class Data Sharing archive cut start-up CPU about 4× (see [deployment](deployment.md#backend-render)).
+
 ## 5. Monitoring (operating system and JVM)
 
 Spring Boot Actuator is enabled on the app's port, so it stays reachable when hosted. It has its own **operator account**, separate from app users. The account isn't in the database, and its username and password come from the `ACTUATOR_USERNAME` and `ACTUATOR_PASSWORD` environment variables (`.env` locally, the host's settings when deployed). The backend refuses to start if they are missing or blank. Setup steps are in [Backend setup](backend-setup.md#actuator-operator-account). See `ActuatorSecurityConfiguration`.

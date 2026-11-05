@@ -82,7 +82,7 @@ spring.jpa.open-in-view=false
 spring.flyway.enabled=true
 ```
 
-This example reflects the `application.properties` content you supplied. The POM declares Flyway and PostgreSQL support, and migration files are stored in `backend/src/main/resources/db/migration/`. Flyway applies the transaction-entry schema migration before Hibernate validates the entity mappings. `ddl-auto=validate` checks that the schema matches the entities; it does not create or update tables.
+These are the core database settings in `backend/src/main/resources/application.properties`; the file also tunes the connection pool, Tomcat, and Actuator (see [performance tuning](performance-tuning.md)). The POM declares Flyway and PostgreSQL support, and migration files are stored in `backend/src/main/resources/db/migration/`. Flyway applies the migrations before Hibernate validates the entity mappings. `ddl-auto=validate` checks that the schema matches the entities; it does not create or update tables.
 
 ## Start the backend
 From the repository root, the standard Maven Wrapper command is:

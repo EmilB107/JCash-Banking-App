@@ -1,6 +1,6 @@
 # Database Setup
 
-JCash uses PostgreSQL 16 locally and plans to use Supabase-hosted PostgreSQL for deployment. The local database is named `jcash_banking_db`; the application role is `jcash_banking_user`.
+JCash uses PostgreSQL 16 locally; the deployed demo uses Supabase-hosted PostgreSQL (see [deployment](deployment.md#database-supabase)). The local database is named `jcash_banking_db`; the application role is `jcash_banking_user`.
 
 ## Start and verify PostgreSQL
 ```bash
@@ -55,7 +55,7 @@ SELECT current_database(), current_user;
 Exit with `\q`.
 
 ## Schema migrations
-Flyway is the planned schema migration tool. Migration files belong in `backend/src/main/resources/db/migration/`, with versioned names such as `V1__init_schema.sql`. Hibernate is configured to validate the schema (`spring.jpa.hibernate.ddl-auto=validate`); Flyway, not Hibernate auto-update, should manage schema changes. Ensure the application role has the privileges needed to run migrations.
+Flyway manages the schema. Migration files are in `backend/src/main/resources/db/migration/`, with versioned names such as `V1__init_schema.sql`, and run automatically when the backend starts. Hibernate only validates the schema (`spring.jpa.hibernate.ddl-auto=validate`); schema changes go in a new Flyway migration, never through Hibernate auto-update. The application role needs the privileges to create and alter tables; `jcash_banking_user` has them because it owns the database.
 
 ## Troubleshooting
 - **Connection refused:** start PostgreSQL and verify host `localhost` and port `5432` (unless configured otherwise).

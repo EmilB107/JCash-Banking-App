@@ -1,13 +1,20 @@
-# Deployment Plan
+# Deployment
 
-The intended portfolio deployment is:
-- **Frontend:** Angular on Vercel (Netlify is an alternative)
-- **Backend:** Spring Boot on Render
-- **Database:** PostgreSQL on Supabase
-- **Repository:** GitHub monorepo
-- **API documentation:** Swagger UI/OpenAPI, where enabled
+The portfolio demo runs on free plans:
 
-This is a target architecture, not a claim that deployment is already configured. Check provider pricing, free-tier limits, sleeping/pausing behavior, backups, and data retention before launch.
+| Part | Host | URL |
+|---|---|---|
+| Frontend (Angular) | Render Static Site (global CDN) | https://jcash-cwha.onrender.com |
+| Backend (Spring Boot) | Render Web Service, Docker, Singapore | https://jcash-api.onrender.com |
+| Database (PostgreSQL) | Supabase, Singapore | — |
+
+```
+Browser ──> Static Site ──/api/*──> Web Service ──> Supabase (Session pooler)
+```
+
+Visitors only ever talk to the static site. It forwards `/api/*` to the backend, the same way `ng serve` proxies `/api` locally, so the browser sees one origin: the session and CSRF cookies are first-party and no CORS configuration is needed. Swagger UI is also available on the backend at `/swagger-ui/index.html`.
+
+Free plans change; check their current limits (sleeping, pausing, connection counts, backups) from time to time.
 
 ## Database (Supabase)
 The Supabase project was created with these choices:
@@ -45,17 +52,35 @@ The free instance has only 0.1 CPU, which made Spring Boot start about 23 times 
 
 The free instance sleeps after about 15 minutes without traffic, and the next request waits for the app to start again (around a minute). Supabase's free Session pooler allows only a small number of connections, so don't run a local backend against Supabase while the Render one is running: each holds up to 10 (the HikariCP pool size).
 
-## Deployment checklist
-- Configure the frontend API base URL for the deployed backend.
-- Configure the backend datasource with Supabase connection details and secrets stored in hosting environment variables.
-- Configure CORS to allow only the intended frontend origin.
-- Set `ACTUATOR_USERNAME` and a long random `ACTUATOR_PASSWORD` in the hosting environment variables; `/actuator/health` stays public, and metrics need that account.
-- Use HTTPS for public traffic.
-- Apply Flyway migrations through a controlled deployment process.
-- Confirm authentication, authorization, ownership checks, and transfer integrity before making the demo public.
-- Provide synthetic demo data or a demo account without exposing personal information.
-- Keep credentials out of GitHub and logs.
-- Include screenshots, setup documentation, and live demo links when available.
-- Display a clear disclaimer that JCash simulates wallet transfers and does not handle real money.
+## Frontend (Render Static Site)
 
-Introduce Docker/Docker Compose only after the core app works locally, unless a concrete deployment need makes containers useful earlier.
+| Setting | Value |
+|---|---|
+| Root Directory | `frontend` |
+| Build Command | `npm ci && npm run build` |
+| Publish Directory | `dist/frontend/browser` |
+| Environment variable | `NODE_VERSION=24` |
+| Build Filters, Included Paths | `frontend/**` |
+
+**Redirects/Rewrites**, in this order (rules are checked top to bottom):
+
+| Source | Destination | Action | Why |
+|---|---|---|---|
+| `/api/*` | `https://jcash-api.onrender.com/api/*` | Rewrite | Forwards API calls to the backend |
+| `/*` | `/index.html` | Rewrite | Lets Angular handle page URLs like `/history`, so a refresh doesn't 404 |
+
+The frontend needs no code changes for production: it already calls relative `/api/...` URLs.
+
+## Deployment checklist
+- [x] Route API calls from the frontend to the backend (static-site rewrite of `/api/*`; no CORS needed).
+- [x] Configure the backend datasource with Supabase connection details and secrets stored in hosting environment variables.
+- [x] Set `ACTUATOR_USERNAME` and a long random `ACTUATOR_PASSWORD` in the hosting environment variables; `/actuator/health` stays public, and metrics need that account.
+- [x] Use HTTPS for public traffic (Render provides it; cookies are marked `Secure`).
+- [x] Apply Flyway migrations through a controlled deployment process (they run when the backend starts).
+- [ ] Confirm authentication, authorization, ownership checks, and transfer integrity before making the demo public.
+- [ ] Provide synthetic demo data or a demo account without exposing personal information.
+- [x] Keep credentials out of GitHub and logs.
+- [ ] Include screenshots, setup documentation, and live demo links when available.
+- [ ] Display a clear disclaimer that JCash simulates wallet transfers and does not handle real money.
+
+Docker is used only to build and run the backend on Render (`backend/Dockerfile`); local development still runs without it.

@@ -20,7 +20,7 @@ Security is a core requirement even though JCash simulates money.
 
 ## Secrets and deployment
 - Keep passwords, tokens, and connection strings out of source control; use environment variables or the hosting provider's secret manager.
-- Use HTTPS/TLS for public traffic and configure CORS for the intended frontend origin.
+- Use HTTPS/TLS for public traffic. The deployed frontend forwards `/api` to the backend, so the browser sees one origin and no CORS configuration is needed; if the API is ever called cross-origin, allow only the intended frontend origin.
 - Never implement custom cryptographic algorithms.
 - Do not log PINs, passwords, tokens, or unnecessary personal/financial details.
 - Clearly state that the app is a simulation and does not process real money.
