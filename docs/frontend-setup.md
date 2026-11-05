@@ -1,9 +1,9 @@
 # Frontend Setup
 
-The supplied `frontend/package.json` declares Angular `^22.2.0` (with Angular CLI/build `^22.2.4`), TypeScript `~6.0.2`, and npm `11.19.1` as its package-manager version. Angular Router, HttpClient, and Reactive Forms are available through the declared Angular packages. Login, dashboard, transfer, and transaction-history pages remain intended application features, not confirmed implemented features.
+The frontend uses Angular `^22.2.0` (Angular CLI/build `^22.2.4`), TypeScript `~6.0.2`, Tailwind CSS, Angular Router, HttpClient, and Reactive Forms, with npm `11.19.1` as the package manager. It has the landing, register, and login pages, and, once signed in, the dashboard, cash-in, send money, transaction history, and profile (including change PIN) pages.
 
 ## Prerequisites
-The supplied lockfile is present and uses lockfile version 3. The locked Angular CLI requires Node.js `^22.22.3`, `^24.15.0`, or `>=26.0.0`; use npm 11.19.1 to match the declared package manager. Check the installed versions with:
+The lockfile (`package-lock.json`, version 3) pins the exact packages. The locked Angular CLI requires Node.js `^22.22.3`, `^24.15.0`, or `>=26.0.0`; use npm 11.19.1 to match the declared package manager. Check the installed versions with:
 ```bash
 node --version
 npm --version
@@ -28,15 +28,18 @@ npm start
 
 ## Optional convenience script
 The repository includes optional convenience scripts. From the repository root, use the platform-specific script:
-```bash
-# Linux
-./scripts/linux/start-frontend.sh
 
-# macOS
-./scripts/macos/start-frontend.sh
-
-# Windows PowerShell
+**Windows (PowerShell)**
+```powershell
 .\scripts\windows\start-frontend.ps1
+```
+**macOS**
+```bash
+./scripts/macos/start-frontend.sh
+```
+**Linux**
+```bash
+./scripts/linux/start-frontend.sh
 ```
 The script checks that the locked frontend dependencies are installed, then runs the existing `npm start` script (`ng serve`). It does not require the backend to be running.
 Other declared scripts are `npm run build`, `npm run watch`, and `npm test`. The test script runs `ng test` (Vitest with jsdom); `npx ng test --watch=false` runs the suite once.

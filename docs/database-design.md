@@ -66,7 +66,7 @@ These behaviours are verified against PostgreSQL by `TransferIntegrationTest`: c
 - Adds `counterparty_account_id`, a foreign key to `accounts`, and `transfer_reference UUID`. A check constraint requires both for TRANSFER entries and neither for other types.
 - Adds a unique constraint on `(transfer_reference, direction)`, so one transfer has exactly one DEBIT and one CREDIT entry; it also indexes lookups by reference.
 
-Details are written once, when the money moves, as a snapshot (`Transfer to Bob Santos (09170000002)`), so later name changes do not rewrite history. The counterparty account is stored but not yet returned by the API.
+Details are written once, when the money moves, as a snapshot (`Transfer to Bob Santos (09170000002)`), so later name changes do not rewrite history. The counterparty account is stored for ledger checks (see `scripts/sql/verify-ledger.sql`) but isn't returned by the API; the details text already names the other person.
 
 ## Migration discipline
 The database starts with the existing V1-V4 schema migrations, then applies V5 for transfer support, V6 to enforce normalized user emails, V7 for mobile-number and PIN login, V8 for transaction details and transfer links, and V9 to drop a redundant idempotency index (see [performance tuning](performance-tuning.md)). Once a Flyway migration has been applied, do not edit it; create a new versioned migration for future changes. Hibernate runs with `ddl-auto=validate`, so fresh-database migration correctness and entity/schema alignment must be checked together. The PostgreSQL integration tests do this on every run by cleaning the dedicated test database and applying V1-V9 from scratch before the Spring context validates the entities.

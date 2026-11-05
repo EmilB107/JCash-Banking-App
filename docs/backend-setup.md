@@ -1,26 +1,27 @@
 # Backend Setup
 
-The backend uses **Java 21** and **Spring Boot 4.1.2** with Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, Spring Security, and PostgreSQL. It currently supports:
+The backend uses **Java 21** and **Spring Boot 4.1.2** with Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, Spring Security, and PostgreSQL. It supports:
 
 - user registration with email, Philippine mobile number, and a BCrypt-hashed 6-digit PIN
 - session-based login by email or mobile number with PIN, and logout
 - account lockout for 5 minutes after 3 consecutive failed logins
 - CSRF protection
 - OpenAPI description and Swagger UI
-- authenticated current-user access
+- authenticated current-user access, profile editing, and PIN change (sharing the login lockout)
 - authenticated account retrieval
 - validated demo cash-in with an atomic account update and transaction entry
 - authenticated current-user transaction history
 - authenticated transfers between separate PHP accounts
 - transfer idempotency, ordered pessimistic locking of sender and recipient accounts, optimistic version checks, and atomic ledger persistence
 - PHP account creation with a zero balance
+- Actuator health checks and operator-only metrics
 
 ## Prerequisites
 From the repository root:
 ```bash
 java --version
 ```
-Use the Maven Wrapper in the repository. Confirm `backend/mvnw` and `backend/pom.xml` exist before running the commands below. The POM currently sets `<java.version>21</java.version>`, so Java 21 is the intended runtime. Check the exact runtime with `java --version`.
+Use the Maven Wrapper in `backend/`; a global Maven installation isn't needed. The POM sets `<java.version>21</java.version>`, so install Java 21.
 
 ## Configure database access
 The local database guide defines the database and role. The backend reads three environment variables and won't start without all of them:
@@ -97,25 +98,28 @@ The server commonly uses `http://localhost:8080`. Confirm startup from the logs.
 
 ## Optional convenience script
 The repository includes optional convenience scripts. From the repository root, use the platform-specific script:
-```bash
-# Linux
-./scripts/linux/start-backend.sh
 
-# macOS
-./scripts/macos/start-backend.sh
-
-# Windows PowerShell
+**Windows (PowerShell)**
+```powershell
 .\scripts\windows\start-backend.ps1
+```
+**macOS**
+```bash
+./scripts/macos/start-backend.sh
+```
+**Linux**
+```bash
+./scripts/linux/start-backend.sh
 ```
 The script loads the root `.env`, checks that `DB_PASSWORD`, `ACTUATOR_USERNAME`, and `ACTUATOR_PASSWORD` are set without printing them, and starts the Maven Wrapper from `backend/`. It does not create or alter databases. Database connection and Flyway errors remain in the Spring Boot output.
 
-## Dependencies and scripts currently declared
+## Dependencies
 
-The provided POM includes Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, Spring Security, and the PostgreSQL JDBC driver. It also includes test-scoped starters for JPA, Flyway, validation, Web MVC, and Spring Security (`spring-boot-starter-security-test`, which provides `spring-security-test` and the security integration for `@WebMvcTest`). The supplied POM uses Spring Boot 4.1.2 and Java 21; keep this guide aligned if you intentionally change either version.
+The POM includes Spring Data JPA, Flyway, Bean Validation, Spring Web MVC, Spring Security, and the PostgreSQL JDBC driver. It also includes test-scoped starters for JPA, Flyway, validation, Web MVC, and Spring Security (`spring-boot-starter-security-test`, which provides `spring-security-test` and the security integration for `@WebMvcTest`). It uses Spring Boot 4.1.2 and Java 21; update this guide if either version changes.
 
 ## Authentication and money movement endpoints
 
-The current authentication flow uses server-side HTTP sessions:
+Authentication uses server-side HTTP sessions:
 
 1. `GET /api/auth/csrf` to receive the CSRF token and `XSRF-TOKEN` cookie.
 2. `POST /api/users` with `email`, `mobileNumber`, `displayName`, and `pin` to register a user and automatically create a PHP account with a zero balance.

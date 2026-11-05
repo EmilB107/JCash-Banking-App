@@ -51,8 +51,24 @@ JCash-Banking-App/
 - [Development roadmap](docs/dev-roadmap.md)
 
 ## Local development
-Set up PostgreSQL first, copy `.env.example` to `.env`, set the local PostgreSQL password in `DB_PASSWORD`, and set `ACTUATOR_USERNAME` and `ACTUATOR_PASSWORD` for the metrics operator account (see [Backend setup](docs/backend-setup.md#actuator-operator-account)). On Linux Mint, the complete stack can then be started with:
-```bash
-./scripts/linux/start-all.sh
-```
-The launcher starts only the PostgreSQL service and application processes it owns; it does not create, reset, or delete database data. Individual component commands and Windows/macOS instructions are in [Development environment overview](docs/dev-env.md).
+Requirements: Java 21, Node.js 24, and PostgreSQL 16.
+
+1. Create the database and its user ([Database setup](docs/database-setup.md)).
+2. Copy `.env.example` to `.env` and fill in `DB_PASSWORD` (your local PostgreSQL password) plus `ACTUATOR_USERNAME` and `ACTUATOR_PASSWORD` ([Backend setup](docs/backend-setup.md#actuator-operator-account)).
+3. Install the frontend packages once: `cd frontend && npm ci`.
+4. From the repository root, start everything:
+
+   **Windows (PowerShell)**
+   ```powershell
+   .\scripts\windows\start-all.ps1
+   ```
+   **macOS**
+   ```bash
+   ./scripts/macos/start-all.sh
+   ```
+   **Linux**
+   ```bash
+   ./scripts/linux/start-all.sh
+   ```
+
+The app opens at `http://localhost:4200` and the API at `http://localhost:8080`. The launcher starts PostgreSQL and the app but never creates, resets, or deletes data. To start each part separately, see [Development environment overview](docs/dev-env.md).

@@ -20,15 +20,18 @@ sudo systemctl stop postgresql
 
 ## Optional convenience script
 The repository includes optional convenience scripts. From the repository root, use the platform-specific script:
-```bash
-# Linux
-./scripts/linux/start-db.sh
 
-# macOS
-./scripts/macos/start-db.sh
-
-# Windows PowerShell
+**Windows (PowerShell)**
+```powershell
 .\scripts\windows\start-db.ps1
+```
+**macOS**
+```bash
+./scripts/macos/start-db.sh
+```
+**Linux**
+```bash
+./scripts/linux/start-db.sh
 ```
 The script checks that PostgreSQL is installed and ready on `localhost:5432`. It does not create, reset, or delete databases. On Windows, service names depend on the PostgreSQL installer; the script starts a discoverable `postgresql*` service when possible. On macOS, it only checks readiness because PostgreSQL may have been installed by Homebrew, Postgres.app, or another distribution.
 

@@ -1,6 +1,6 @@
 # Development Environment
 
-This is the short overview for local development on Linux Mint, Windows, and macOS. Use the component guides for detailed setup:
+This is the short overview for local development on Windows, macOS, and Linux. Use the component guides for detailed setup:
 
 - [Database setup](database-setup.md)
 - [Backend setup](backend-setup.md)
@@ -55,15 +55,17 @@ cd ..
 
 The standard component commands are documented in the linked guides. The optional combined launchers start PostgreSQL first, then the backend and frontend:
 
-```bash
-# Linux
-./scripts/linux/start-all.sh
-
-# macOS
-./scripts/macos/start-all.sh
-
-# Windows PowerShell
+**Windows (PowerShell)**
+```powershell
 .\scripts\windows\start-all.ps1
 ```
+**macOS**
+```bash
+./scripts/macos/start-all.sh
+```
+**Linux**
+```bash
+./scripts/linux/start-all.sh
+```
 
-On Linux and macOS, the backend normally uses `http://localhost:8080` and the frontend uses `http://localhost:4200`. Press `Ctrl+C` to stop the application processes started by the combined launcher. PostgreSQL remains running.
+On every platform, the backend normally uses `http://localhost:8080` and the frontend uses `http://localhost:4200`. Press `Ctrl+C` to stop the application processes started by the combined launcher. PostgreSQL remains running.

@@ -52,7 +52,6 @@ The transfer unit tests (`TransferServiceTest`, `TransferRequestValidationTest`,
 - Concurrent transfers cannot overspend the same sender account.
 - Interleaved opposite-direction transfers (A→B and B→A) complete without deadlock.
 - Mixed-case emails are normalized across registration, login, and transfer recipients, and the database rejects a non-normalized email.
-
 - Transfers by mobile number reach the recipient in both `09...` and `+639...` formats, and a retry naming the recipient by mobile number after email returns the original result.
 
 The opposite-direction test is timing-dependent: it is strong evidence that lock ordering prevents deadlocks, not a formal proof.

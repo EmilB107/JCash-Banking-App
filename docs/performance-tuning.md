@@ -47,6 +47,7 @@ No new index was needed. I also tried an index on `(account_id, created_at DESC,
 | `connection-timeout` | 5 s | If the pool is exhausted, the request fails fast with an error instead of hanging for the default 30 s. |
 | `max-lifetime` | 30 min | Connections are replaced before a database or network timeout closes them. |
 | `pool-name` | `jcash-pool` | Makes the pool easy to find in logs and metrics. |
+| `initialization-fail-timeout` | 60 s | Retries the first connection instead of failing at once; on Render's free plan the first encrypted connection can time out (see [deployment](deployment.md#backend-render)). |
 
 ## 3. Container configuration (embedded Tomcat)
 
