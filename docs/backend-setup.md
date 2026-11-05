@@ -31,6 +31,13 @@ The local database guide defines the database and role. The backend reads three 
 | `ACTUATOR_USERNAME` | Username of the operator account for `/actuator/metrics` (any name, for example `ops`) |
 | `ACTUATOR_PASSWORD` | Password of that operator account |
 
+Two more variables are optional locally and only set when deploying, to point the backend at the hosted database (see [deployment](deployment.md#database-supabase)):
+
+| Variable | Default |
+|---|---|
+| `DB_URL` | `jdbc:postgresql://localhost:5432/jcash_banking_db` |
+| `DB_USERNAME` | `jcash_banking_user` |
+
 The usual place for them is the root `.env` file (copied from `.env.example`), which the start scripts and the test command load. To set them only in the terminal that will run Spring Boot instead:
 ```bash
 read -s -p "Enter PostgreSQL password: " DB_PASSWORD
@@ -66,9 +73,9 @@ When deploying, set the same two variables in the host's environment settings, w
 The `spring.application.name` property identifies the Spring application for configuration and logging; it does not affect the database connection. The project uses `jcash-banking` as its application identifier. The remaining settings match this example:
 ```properties
 spring.application.name=jcash-banking
-spring.datasource.url=jdbc:postgresql://localhost:5432/jcash_banking_db
-spring.datasource.username=jcash_banking_user
-spring.datasource.******
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/jcash_banking_db}
+spring.datasource.username=${DB_USERNAME:jcash_banking_user}
+spring.datasource.password=${DB_PASSWORD}
 spring.datasource.driver-class-name=org.postgresql.Driver
 spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.open-in-view=false

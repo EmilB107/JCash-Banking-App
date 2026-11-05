@@ -1,0 +1,7 @@
+# Files Docker should not copy into the build. target/ is rebuilt inside the
+# container, so sending the local one would only slow the build down.
+target/
+.idea/
+.vscode/
+*.iml
+HELP.md

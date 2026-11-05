@@ -9,6 +9,40 @@ The intended portfolio deployment is:
 
 This is a target architecture, not a claim that deployment is already configured. Check provider pricing, free-tier limits, sleeping/pausing behavior, backups, and data retention before launch.
 
+## Database (Supabase)
+The Supabase project was created with these choices:
+- **Region:** Southeast Asia (Singapore), the same region as the backend, because every API request makes several database calls.
+- **Data API off:** it would publish the tables as a public REST API. Only the backend talks to the database, over JDBC, and it does the access checks itself.
+- **Automatic RLS off:** Row Level Security protects the Data API, which is off.
+- **No GitHub integration:** Flyway owns the schema and runs the migrations when the backend starts.
+
+The backend connects through Supabase's **Session pooler**, because the free plan's direct connection only works over IPv6 and Render only connects over IPv4. Set these in the backend host's environment variables:
+
+| Variable | Value |
+|---|---|
+| `DB_URL` | `jdbc:postgresql://<pooler host>:5432/postgres?sslmode=require` |
+| `DB_USERNAME` | `postgres.<project ref>` (shown in Supabase under **Connect**) |
+| `DB_PASSWORD` | The database password chosen when creating the project |
+
+Keep the password out of `DB_URL` so it never needs percent-encoding and isn't printed with the URL. `sslmode=require` encrypts the connection over the internet.
+
+## Backend (Render)
+Render has no built-in Java runtime, so the backend is deployed with `backend/Dockerfile`: it builds the jar with the Maven Wrapper (tests skipped, since they need PostgreSQL) and runs it on a Java 21 runtime image as a non-root user.
+
+Create a **Web Service** from the GitHub repository with:
+
+| Setting | Value |
+|---|---|
+| Language | Docker |
+| Root Directory | `backend` |
+| Region | Singapore (same as the database) |
+| Instance type | Free |
+| Health Check Path | `/api/health` |
+
+Environment variables: `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` from the [database section](#database-supabase), plus `ACTUATOR_USERNAME` and a new long random `ACTUATOR_PASSWORD`. Render sets `PORT` itself, and `server.port=${PORT:8080}` picks it up.
+
+The free instance sleeps after about 15 minutes without traffic, and the next request waits for the app to start again (around a minute). Supabase's free Session pooler allows only a small number of connections, so don't run a local backend against Supabase while the Render one is running: each holds up to 10 (the HikariCP pool size).
+
 ## Deployment checklist
 - Configure the frontend API base URL for the deployed backend.
 - Configure the backend datasource with Supabase connection details and secrets stored in hosting environment variables.
