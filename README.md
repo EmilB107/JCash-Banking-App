@@ -1,5 +1,7 @@
 # JCash Banking
 
+[![CI](https://github.com/EmilB107/JCash-Banking-App/actions/workflows/ci.yml/badge.svg)](https://github.com/EmilB107/JCash-Banking-App/actions/workflows/ci.yml)
+
 JCash is a full-stack **simulated wallet** project for learning and demonstrating frontend development, backend design, database modeling, authentication, transaction integrity, concurrency control, and automated testing. It is not a real banking or payment service and must not be used to store real financial information or move real money.
 
 ## Live demo
@@ -14,7 +16,7 @@ The demo runs on free plans. Pages load right away, but the backend sleeps when 
 - **Database:** PostgreSQL (16 locally, Supabase-hosted 17 for the demo), Spring Data JPA/Hibernate, Flyway; JDBC where appropriate
 - **Build and version control:** Maven Wrapper, npm 11.19.1, Git, GitHub
 - **API and testing:** REST, Postman, Swagger UI/OpenAPI, JUnit 5, Mockito, Spring Boot Test
-- **Deployment:** Docker, Render (static site and web service), Supabase
+- **Deployment:** Docker, Render (static site and web service), Supabase, GitHub Actions (CI)
 
 ## Features
 - **Accounts:** registration with email, mobile number, and a BCrypt-hashed 6-digit PIN; each user gets a PHP wallet account with a zero balance

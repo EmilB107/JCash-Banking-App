@@ -7,9 +7,10 @@ Automated tests should be developed alongside features, not postponed until the 
 - **Mockito:** isolate services and simulate dependency failures
 - **Spring Boot Test:** application-level tests
 - **MockMvc:** API and authentication/header behavior tests
-- **Testcontainers:** optional integration tests against real PostgreSQL
-- **Angular testing tools:** component, service, form, and UI tests
-- **Playwright:** optional end-to-end browser workflows
+- **PostgreSQL integration tests:** migrations, constraints, rollback, and concurrency against a dedicated test database
+- **Vitest with Angular TestBed:** component, service, and form tests
+- **Postman:** the full API flow against a running backend
+- **GitHub Actions:** runs the backend and frontend tests on every push
 
 ## Transfer scenarios
 The transfer unit tests (`TransferServiceTest`, `TransferRequestValidationTest`, `TransferControllerTest`) cover:
@@ -94,6 +95,13 @@ Without PostgreSQL these tests fail rather than skip. In that case run the non-d
 A database test that did not run is not evidence that rollback, migration, or concurrency behavior passed.
 
 Use deterministic test data. Integration tests should exercise transaction behavior and database constraints, not only mocked service logic. Never use real financial or personal data in test fixtures.
+
+## Continuous integration
+`.github/workflows/ci.yml` runs on every push and pull request to `main`, in two parallel GitHub Actions jobs:
+- **backend:** starts a throwaway PostgreSQL 16 service, creates `jcash_banking_test_db`, and runs the full Maven test suite, database tests included.
+- **frontend:** runs `npm ci`, the unit tests, and a production build.
+
+Results are on the repository's **Actions** tab, and the badge at the top of the README shows the latest run on `main`. The CI database and passwords are throwaway values that exist only during the run.
 
 ## Postman collection
 `postman/JCash.postman_collection.json` walks through the whole API against a running backend, in this order: setup (health and CSRF token), registration, authentication (including the 3-attempt lockout), cash-in, transfers, transaction history, profile and PIN change, and the recipient's view of the transfer. Each request has Postman tests that check the status code, the `error` code on failures, and the important response fields.
