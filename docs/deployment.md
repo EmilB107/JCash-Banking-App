@@ -80,7 +80,7 @@ The frontend needs no code changes for production: it already calls relative `/a
 - [x] Confirm authentication, authorization, ownership checks, and transfer integrity before making the demo public.
 - [x] Provide synthetic demo data or a demo account without exposing personal information.
 - [x] Keep credentials out of GitHub and logs.
-- [x] Include screenshots, setup documentation, and live demo links when available.
+- [x] Include screenshots, setup documentation, and live demo links.
 - [x] Display a clear disclaimer that JCash simulates wallet transfers and does not handle real money.
 
 Docker is used only to build and run the backend on Render (`backend/Dockerfile`); local development still runs without it.

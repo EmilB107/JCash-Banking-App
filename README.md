@@ -66,7 +66,6 @@ JCash-Banking-App/
 - [Security](docs/security.md)
 - [Testing](docs/testing.md)
 - [Deployment](docs/deployment.md)
-- [Development roadmap](docs/dev-roadmap.md)
 
 ## Local development
 Requirements: Java 21, Node.js 24, and PostgreSQL 16.
