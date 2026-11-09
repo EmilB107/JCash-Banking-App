@@ -8,7 +8,25 @@ JCash is a full-stack **simulated wallet** project for learning and demonstratin
 - **App:** https://jcash-cwha.onrender.com
 - **API docs (Swagger UI):** https://jcash-api.onrender.com/swagger-ui/index.html
 
-The demo runs on free plans. Pages load right away, but the backend sleeps when idle, so the first sign-in or API call after a quiet spell can take about a minute while it starts. Register with any made-up email and mobile number; all money is simulated. See [Deployment](docs/deployment.md) for how it's hosted.
+The demo runs on free plans. Pages load right away, but the backend sleeps when idle, so the first sign-in or API call after a quiet spell can take about a minute while it starts. All money is simulated. See [Deployment](docs/deployment.md) for how it's hosted.
+
+Sign in with a shared demo account using either its email or mobile number, or register your own with any made-up details:
+
+| Demo account | Email | Mobile | PIN |
+|---|---|---|---|
+| WingDynasty | `wingdynasty@example.com` | `09000000001` | `246810` |
+| ChiktenWings | `chiktenwings@example.com` | `09000000002` | `757695` |
+
+To try a transfer, sign in as one account and send money to the other. Other visitors share these logins, so if one stops working, register your own account instead.
+
+## Screenshots
+| Landing page | Dashboard |
+|---|---|
+| ![JCash landing page](docs/screenshots/landing.png) | ![Dashboard with balance and recent activity](docs/screenshots/dashboard.png) |
+
+| Send money | Transaction history |
+|---|---|
+| ![Send money form](docs/screenshots/send-money.png) | ![Transaction history](docs/screenshots/history.png) |
 
 ## Technology
 - **Frontend:** Angular 22.2.x, TypeScript 6.0.x, Angular Router, HttpClient, Reactive Forms

@@ -46,7 +46,7 @@ Create a **Web Service** from the GitHub repository with:
 | Instance type | Free |
 | Health Check Path | `/api/health` |
 
-Environment variables: `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` from the [database section](#database-supabase), plus `ACTUATOR_USERNAME` and a new long random `ACTUATOR_PASSWORD`. Render sets `PORT` itself, and `server.port=${PORT:8080}` picks it up.
+Environment variables: `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` from the [database section](#database-supabase), plus `ACTUATOR_USERNAME`, a new long random `ACTUATOR_PASSWORD`, and `SERVER_SERVLET_SESSION_COOKIE_SECURE=true`. That last one marks the session cookie `Secure`; it's set only here so local development keeps working over plain HTTP. Render sets `PORT` itself, and `server.port=${PORT:8080}` picks it up.
 
 The free instance has only 0.1 CPU, which made Spring Boot start about 23 times slower than on a PC, so slowly that Supabase's pooler closed the first encrypted connection before Java finished setting it up. The Dockerfile therefore starts Java with lighter JIT and garbage-collector settings and a Class Data Sharing archive made during the build (together about 4× less startup CPU), and HikariCP retries the first connection for up to 60 seconds (`initialization-fail-timeout`).
 
@@ -77,10 +77,10 @@ The frontend needs no code changes for production: it already calls relative `/a
 - [x] Set `ACTUATOR_USERNAME` and a long random `ACTUATOR_PASSWORD` in the hosting environment variables; `/actuator/health` stays public, and metrics need that account.
 - [x] Use HTTPS for public traffic (Render provides it; cookies are marked `Secure`).
 - [x] Apply Flyway migrations through a controlled deployment process (they run when the backend starts).
-- [ ] Confirm authentication, authorization, ownership checks, and transfer integrity before making the demo public.
-- [ ] Provide synthetic demo data or a demo account without exposing personal information.
+- [x] Confirm authentication, authorization, ownership checks, and transfer integrity before making the demo public.
+- [x] Provide synthetic demo data or a demo account without exposing personal information.
 - [x] Keep credentials out of GitHub and logs.
-- [ ] Include screenshots, setup documentation, and live demo links when available.
-- [ ] Display a clear disclaimer that JCash simulates wallet transfers and does not handle real money.
+- [x] Include screenshots, setup documentation, and live demo links when available.
+- [x] Display a clear disclaimer that JCash simulates wallet transfers and does not handle real money.
 
 Docker is used only to build and run the backend on Render (`backend/Dockerfile`); local development still runs without it.
