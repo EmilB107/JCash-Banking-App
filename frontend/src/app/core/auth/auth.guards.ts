@@ -13,12 +13,13 @@ export const authGuard: CanActivateFn = () => {
   if (auth.currentUser() === null) {
     return toLogin;
   }
-  // Still unknown: the startup check failed (e.g. backend was down), so try again.
+  // Still unknown: joins the startup check, or tries again if it failed (e.g. backend was down).
   return auth.loadCurrentUser().pipe(
     map((user) => (user ? true : toLogin)),
     catchError(() => of(toLogin)),
   );
 };
 
+// Doesn't wait for the session check, so these forms open even while the backend wakes up.
 export const guestGuard: CanActivateFn = () =>
   inject(AuthService).isAuthenticated() ? inject(Router).createUrlTree(['/dashboard']) : true;

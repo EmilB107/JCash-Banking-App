@@ -11,11 +11,11 @@ import {
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { catchError, of } from 'rxjs';
 import { routes } from './app.routes';
 import { AuthService } from './core/auth/auth.service';
 import { sessionExpiredInterceptor } from './core/auth/session-expired.interceptor';
 import { csrfInterceptor } from './core/http/csrf.interceptor';
+import { serverWakeInterceptor } from './core/http/server-wake';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -23,16 +23,17 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(
       withFetch(),
-      withInterceptors([csrfInterceptor, sessionExpiredInterceptor]),
+      // serverWakeInterceptor is first so its timer includes any wait for a CSRF token.
+      withInterceptors([serverWakeInterceptor, csrfInterceptor, sessionExpiredInterceptor]),
       // csrfInterceptor handles CSRF, including fetching a missing token.
       withNoXsrfProtection(),
     ),
-    // Restore an existing session before the first route renders. If the
-    // backend is unreachable, start anyway with the session state unknown.
-    provideAppInitializer(() =>
+    // Start restoring the session, but don't return it: waiting here would keep
+    // every page blank for the minute a sleeping backend takes to start.
+    provideAppInitializer(() => {
       inject(AuthService)
         .loadCurrentUser()
-        .pipe(catchError(() => of(null))),
-    ),
+        .subscribe({ error: () => undefined });
+    }),
   ],
 };

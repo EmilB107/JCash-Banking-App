@@ -1,6 +1,16 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, finalize, map, of, switchMap, tap, throwError } from 'rxjs';
+import {
+  Observable,
+  catchError,
+  finalize,
+  map,
+  of,
+  shareReplay,
+  switchMap,
+  tap,
+  throwError,
+} from 'rxjs';
 import { RegisterRequest, UpdateProfileRequest, User } from './user';
 
 /**
@@ -16,20 +26,25 @@ export class AuthService {
 
   readonly currentUser = this.user.asReadonly();
   readonly isAuthenticated = computed(() => !!this.user());
+  private sessionCheck: Observable<User | null> | null = null;
 
-  /** Resolves to null (not an error) when there is no session. */
+  /** Resolves to null (not an error) when there is no session. Concurrent callers share one check. */
   loadCurrentUser(): Observable<User | null> {
-    return this.fetchMe().pipe(
+    this.sessionCheck ??= this.fetchMe().pipe(
       catchError((err: unknown) =>
         err instanceof HttpErrorResponse && err.status === 401 ? of(null) : throwError(() => err),
       ),
       tap((user) => this.user.set(user)),
+      finalize(() => (this.sessionCheck = null)),
+      shareReplay(1),
     );
+    return this.sessionCheck;
   }
 
   /** Errors surface as HttpErrorResponse; convert with toApiError. */
   login(identifier: string, pin: string): Observable<User> {
-    return this.http.post<void>('/api/auth/login', { identifier, pin }).pipe(
+    return this.sessionCheckSettled().pipe(
+      switchMap(() => this.http.post<void>('/api/auth/login', { identifier, pin })),
       switchMap(() => this.fetchMe()),
       tap((user) => this.user.set(user)),
     );
@@ -66,6 +81,11 @@ export class AuthService {
   /** Marks the user signed out without calling the server (e.g. session expired). */
   clearSession(): void {
     this.user.set(null);
+  }
+
+  // A 401 from a check that finishes after login would sign the user straight back out.
+  private sessionCheckSettled(): Observable<unknown> {
+    return this.sessionCheck?.pipe(catchError(() => of(null))) ?? of(null);
   }
 
   private fetchMe(): Observable<User> {

@@ -58,6 +58,42 @@ describe('AuthService', () => {
     expect(auth.currentUser()).toBeNull();
   });
 
+  it('holds a login until the session check finishes, so its 401 cannot undo the login', () => {
+    auth.loadCurrentUser().subscribe();
+    auth.login('demo@example.com', '123456').subscribe();
+
+    backend.expectNone({ method: 'POST', url: '/api/auth/login' });
+    backend
+      .expectOne('/api/users/me')
+      .flush(
+        { error: 'UNAUTHORIZED', message: 'Login required' },
+        { status: 401, statusText: 'Unauthorized' },
+      );
+
+    backend
+      .expectOne({ method: 'POST', url: '/api/auth/login' })
+      .flush({ message: 'Login successful' });
+    backend.expectOne('/api/users/me').flush(USER);
+
+    expect(auth.currentUser()).toEqual(USER);
+  });
+
+  it('still logs in when the session check fails', () => {
+    auth.loadCurrentUser().subscribe({ error: () => undefined });
+    auth.login('demo@example.com', '123456').subscribe();
+
+    backend
+      .expectOne('/api/users/me')
+      .flush('Bad gateway', { status: 502, statusText: 'Bad Gateway' });
+
+    backend
+      .expectOne({ method: 'POST', url: '/api/auth/login' })
+      .flush({ message: 'Login successful' });
+    backend.expectOne('/api/users/me').flush(USER);
+
+    expect(auth.currentUser()).toEqual(USER);
+  });
+
   it('logs in and loads the profile', () => {
     auth.login('demo@example.com', '123456').subscribe();
 

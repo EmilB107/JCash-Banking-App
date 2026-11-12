@@ -60,6 +60,18 @@ describe('route guards', () => {
     expect(await result).toBe(true);
   });
 
+  it('authGuard joins a session check that is already running', async () => {
+    auth.loadCurrentUser().subscribe();
+    const result = run(authGuard);
+    backend.expectOne('/api/users/me').flush(USER);
+    expect(await result).toBe(true);
+  });
+
+  it('guestGuard does not wait while the session is still unknown', async () => {
+    auth.loadCurrentUser().subscribe();
+    expect(await run(guestGuard)).toBe(true);
+  });
+
   it('guestGuard sends signed-in users to /dashboard', async () => {
     signIn();
     const result = await run(guestGuard);
