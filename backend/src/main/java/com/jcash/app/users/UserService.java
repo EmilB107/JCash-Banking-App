@@ -51,7 +51,7 @@ public class UserService {
         String pinHash = passwordEncoder.encode(rawPin);
 
         User user = saveAndFlush(
-                new User(normalizedEmail, normalizedMobileNumber, displayName, pinHash));
+                new User(normalizedEmail, normalizedMobileNumber, displayName.trim(), pinHash));
 
         Account account = new Account(user);
         accountRepository.save(account);
@@ -84,7 +84,7 @@ public class UserService {
             throw new MobileNumberAlreadyRegisteredException(normalizedMobileNumber);
         }
 
-        user.updateProfile(normalizedEmail, normalizedMobileNumber, displayName);
+        user.updateProfile(normalizedEmail, normalizedMobileNumber, displayName.trim());
         return saveAndFlush(user);
     }
 

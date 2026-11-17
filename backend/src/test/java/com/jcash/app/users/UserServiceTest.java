@@ -102,6 +102,15 @@ class UserServiceTest {
     }
 
     @Test
+    void createUserStoresTrimmedDisplayName() {
+        stubSuccessfulSave();
+
+        User user = userService.createUser(EMAIL, MOBILE, "  Demo User ", PIN);
+
+        assertThat(user.getDisplayName()).isEqualTo("Demo User");
+    }
+
+    @Test
     void createUserRejectsDuplicateEmailRegardlessOfCase() {
         when(userRepository.existsByEmail(EMAIL)).thenReturn(true);
 
@@ -197,7 +206,7 @@ class UserServiceTest {
         when(userRepository.saveAndFlush(stored)).thenReturn(stored);
 
         User updated = userService.updateProfile(
-                EMAIL, "  New@Example.COM ", "+639181234567", "New Name");
+                EMAIL, "  New@Example.COM ", "+639181234567", "  New Name ");
 
         assertThat(updated.getEmail()).isEqualTo("new@example.com");
         assertThat(updated.getMobileNumber()).isEqualTo("09181234567");
